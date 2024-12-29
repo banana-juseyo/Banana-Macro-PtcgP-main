@@ -13,7 +13,7 @@
                 <div class="appLogo"></div>
             </div>
             <div class="headerBarContainer">
-                <div class="versionText">v1.00</div>
+                <div class="versionText" id="versionText">v1.00</div>
                 <div class="updateButton">버전 업데이트</div>
                 <div class="homeButton headerButton" id="headerHomeButton">
                     <div class="homeIcon headerButtonIcon"></div>
@@ -34,7 +34,8 @@
                     <textarea name="logHistoryTextArea" id="logHistoryTextArea" readonly></textarea>
                     <textarea name="hiddenTextArea" id="hiddenTextArea"></textarea>
                     <div class="gitHubLink" id="gitHubLink">
-                        <div class="banana"></div> <span onClick="githubLink()">https://github.com/banana-juseyo/Banana-Macro-PtcgP</span>
+                        <div class="banana"></div> <span
+                            onClick="githubLink()">https://github.com/banana-juseyo/Banana-Macro-PtcgP</span>
                     </div>
                 </div>
             </div>
@@ -110,7 +111,14 @@
     }
 
     function githubLink() {
-        chrome.webview.postMessage("_click_github_link");
+        document.getElementById("headerHomeButton").onclick = function () {
+            chrome.webview.postMessage("_button_click_header_home");
+        }
+    }
+
+    function updateVersionText(version) {
+        const versionText = document.getElementById("versionText")
+        versionText.textContent = version
     }
 
     function adjustTextAreaHeight() {
@@ -158,7 +166,7 @@
 
     document.getElementById("gitHubLink").addEventListener("click", e => {
         e.preventDefault()
-        
+
     })
 
 </script>

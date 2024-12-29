@@ -382,6 +382,8 @@ NewWindowRequestedHandler(wv2, arg) {
     deferral.Complete()
 }
 
+UpdateHtmlVersion(_currentVersion)
+
 ;; 메인 UI에서 넘어오는 값을 확인하는 리스너 -> Loop 중 함수로 넘기면 실행이 안됨 (우선순위 이슈)
 nwr := wv.WebMessageReceived(HandleWebMessageReceived)
 HandleWebMessageReceived(sender, args) {
@@ -1597,4 +1599,9 @@ UpdateUserIni(obj) {
     IniWrite obj.Delay, "Settings.ini", "UserSettings", "Delay"
     IniWrite obj.AcceptingTerm, "Settings.ini", "UserSettings", "AcceptingTerm"
     IniWrite obj.BufferTerm, "Settings.ini", "UserSettings", "BufferTerm"
+}
+
+
+UpdateHtmlVersion(version) {
+    wv.ExecuteScriptAsync("updateVersionText('" version "')")
 }
