@@ -869,6 +869,7 @@ _main(_currentLogic := "00") {
                     _thisUserPass := FALSE
                     _thisUserFulfilled := FALSE
                     _currentLogic := "03-B"
+                    failCount := 0
                 }
                 else if (match == 0) {
                     match := ImageSearch(
@@ -961,6 +962,7 @@ _main(_currentLogic := "00") {
                     ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 3, 'NA', ,) ;
                     delayShort()
                     _currentLogic := "03-C"
+                    failCount := 0
                 }
                 else if (match == 0) {
                     ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 1, 'NA', ,)
@@ -995,6 +997,7 @@ _main(_currentLogic := "00") {
                         ; _statusMsg("[클릭]`ntargetX : " . targetX . "`ntargetY : " . targetY)
                         ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
                         _thisUserFulfilled := TRUE
+                        failCount := 0
                         delayLong() ; // 닌텐도 서버 이슈로 로딩 발생
                     }
                     else if (match == 0) {
@@ -1015,6 +1018,7 @@ _main(_currentLogic := "00") {
                             _clickCloseModalButton()
                             _thisUserFulfilled := TRUE
                             _currentLogic := "01"
+                            failCount := 0
                         }
                         else if (match == 0) {
                             delayShort()
@@ -1043,6 +1047,7 @@ _main(_currentLogic := "00") {
                         targetY := matchedY - targetWindowY
                         ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
                         _thisUserFulfilled := TRUE
+                        failCount := 0
                     }
                     else if (match == 0) {
                         failCount := failCount + 1
@@ -1064,6 +1069,7 @@ _main(_currentLogic := "00") {
                             '95%'), targetWindowHwnd, , 'Left', 1, 'NA', ,)
                         SendUiMsg("[승인 완료] 다음 신청 진행")
                         _currentLogic := "01"
+                        failCount := 0
                     }
                     else if (match == 0) {
                         ; _delayXLong() ; // 유저가 입국 절차 중간에 신청 취소 시 닌텐도 서버 이슈로 긴 로딩 발생
@@ -1086,6 +1092,7 @@ _main(_currentLogic := "00") {
                             ControlClick('X' . getWindowXbyWindowPercentage('50%') . ' Y' .
                             getWindowYbyWindowPercentage('95%'), targetWindowHwnd, , 'Left', 1, 'NA', ,)
                             _currentLogic := "01"
+                            failCount := 0
                             delayLong()
                         }
                         else if (match == 0) {
@@ -1107,6 +1114,7 @@ _main(_currentLogic := "00") {
                         _clickCloseModalButton()
                         SendUiMsg("[거절 완료] 다음 신청 진행")
                         _currentLogic := "01"
+                        failCount := 0
                         delayShort()
                     }
                     else if (match == 0) {
