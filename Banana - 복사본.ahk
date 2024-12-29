@@ -18,6 +18,7 @@ _version := "v1.00"
 _website := "https://github.com/banana-juseyo/Banana-Macro-PtcgP"
 _repoName := "Banana-Macro-PtcgP"
 
+
 #Requires AutoHotkey v2.0
 #Include .\app\WebView2.ahk
 #include .\app\_JXON.ahk
@@ -55,6 +56,7 @@ global recentText := ""
 global RecentTextCtrl := {}
 global oldTexts := ""
 global _userIni := {}
+global _fullpath
 global FileInfo
 
 ; 환경값 초기화 & 기본값
@@ -119,15 +121,15 @@ class Downloader {
     }
 
     ; 파일 업데이트 체크
-    CheckMsedgeDLL() {
+    CheckMsedgeDLL(){
         ; 경로 표현 시 \ (백슬래시) 대신 / (슬래시) 사용
-        _msedgeProjectPath := "/app/msedge.dll"
-        _fullpath := A_ScriptDir . _msedgeProjectPath
-
+    _msedgeProjectPath := "/app/msedge.dll"
+    _fullpath := A_ScriptDir . _msedgeProjectPath
+    
         if (FileExist(_fullpath) && FileGetSize(_fullpath) >= 283108904) {
             SendDebugMsg("업데이트할 파일이 없습니다.")
         } else {
-            FileInfo := DownloaderInstance.GetRepoApi(_msedgeProjectPath)
+            FileInfo := DownloaderInstance.GetRepoFileInfo(_msedgeProjectPath)
             if (FileInfo["isAvailable"]) {
                 d := DownloaderInstance.Download(FileInfo, _fullpath)
             } else {
@@ -143,7 +145,7 @@ class Downloader {
             }
         }
     }
-
+    
     ; 파일 다운로드 실행
     Download(FileInfo, _fullPath) {
         global TextCtrl
@@ -201,8 +203,8 @@ class Downloader {
         }
     }
 
-    ; Repo Api에서 파일 조회 -> obj
-    GetRepoApi(ProjectFilePath) {
+    ; Repo Api에서 파일 info obj 조회
+    GetRepoFileInfo(ProjectFilePath) {
         i := InStr(ProjectFilePath, "/", , -1)
         Path := SubStr(ProjectFilePath, 1, i - 1)
         FileName := SubStr(ProjectFilePath, i + 1)
@@ -249,7 +251,6 @@ class Downloader {
                             "isAvailable", TRUE,
                             "fileName", FileName,
                             "destination", A_ScriptDir . Path . "/",
-                            "fullPath", A_ScriptDir . Path . "/" . FileName,
                             "downloadUrl", file["download_url"],
                             "size", file["size"]
                         )
@@ -274,23 +275,14 @@ class Downloader {
             http.WaitForResponse()
 
             response := http.ResponseText
-            response := Jxon_Load(&response)
+            FileInfo := Jxon_Load(&response)
             ; 버전 비교
-            latestVersion := response["tag_name"]
+            latestVersion := FileInfo["tag_name"]
             if (latestVersion != this.currentVersion) {
                 ; 업데이트가 필요한 경우
-                fileInfo := Map(
-                    "isAvailable", TRUE,
-                    "fileName", response["assets"][1]["name"],
-                    "destination", tempFile := A_Temp,
-                    "fullPath",  tempFile := A_Temp "\" A_ScriptName ".new",
-                    "downloadUrl", response["assets"][1]["browser_download_url"],
-                    "size", response["assets"][1]["size"]
-                )
-                return this.PerformUpdate(fileInfo)
+                return this.PerformUpdate(FileInfo)
             }
             ; 업데이트가 필요하지 않은 경우
-            SendDebugMsg("최신 버전입니다.")
             return true
         }
         catch Error as e {
@@ -301,20 +293,20 @@ class Downloader {
 
     ; 업데이트 실행
     PerformUpdate(FileInfo) {
-        downloadUrl := FileInfo["downloadUrl"]
+        downloadUrl := FileInfo["assets"][1]["browser_download_url"]
         try {
-            _fullpath := FileInfo["fullPath"]
-            FileAppend("", _fullpath)
+            tempFile := A_Temp "\" A_ScriptName ".new"
+            FileAppend("", tempFile)
             backupFile := A_ScriptFullPath ".backup"
             ; 새 버전 다운로드
             ; Download(downloadUrl, tempFile)
-            d := DownloaderInstance.Download(FileInfo, _fullpath)
+            d := DownloaderInstance.Download(FileInfo, tempFile)
             ; 현재 스크립트 백업
             if FileExist(backupFile)
                 FileDelete(backupFile)
             FileCopy(A_ScriptFullPath, backupFile)
             ; 업데이트 스크립트 파일 생성
-            updateScriptPath := this.CreateUpdateScript(_fullpath)
+            updateScriptPath := this.CreateUpdateScript(tempFile)
             ; 업데이트 스크립트 실행 후 현재 스크립트 종료
             Run(updateScriptPath)
             ExitApp

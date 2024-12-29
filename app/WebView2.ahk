@@ -16,10 +16,10 @@ if !FileExist(dllPath) {
     ExitApp
 }
 
-if !FileExist(edgeRuntime) {
-    MsgBox "Fixed Version Runtime 디렉터리에 msedge.dll 파일이 없습니다: " edgeRuntime
-    ExitApp
-}
+; if !FileExist(edgeRuntime) {
+;     MsgBox "Fixed Version Runtime 디렉터리에 msedge.dll 파일이 없습니다: " edgeRuntime
+;     ExitApp
+; }
 
 if !DllCall('LoadLibrary', 'str', dllpath, 'ptr')
     throw OSError()
