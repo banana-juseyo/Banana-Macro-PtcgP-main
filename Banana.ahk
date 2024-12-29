@@ -12,11 +12,11 @@
 ; 권장 플레이어 : mumuplayer
 ; 권장 인스턴스 해상도 : 540 * 960 (220 dpi)
 
-_appTitle := "Banana Macro"
-_author := "banana-juseyo"
-_version := "v1.00"
-_website := "https://github.com/banana-juseyo/Banana-Macro-PtcgP"
-_repoName := "Banana-Macro-PtcgP"
+global _appTitle := "Banana Macro"
+global _author := "banana-juseyo"
+global _currentVersion := "v1.00"
+global _website := "https://github.com/banana-juseyo/Banana-Macro-PtcgP"
+global _repoName := "Banana-Macro-PtcgP"
 
 #Requires AutoHotkey v2.0
 #Include .\app\WebView2.ahk
@@ -84,7 +84,6 @@ class Downloader {
     TextCtrl := {}
     Http := {}
     _progress := 0
-    currentVersion := _version
 
     __New() {
         if (_downloaderGUIHwnd && WinExist(_downloaderGUIHwnd)) {
@@ -277,20 +276,19 @@ class Downloader {
             response := Jxon_Load(&response)
             ; 버전 비교
             latestVersion := response["tag_name"]
-            if (latestVersion != this.currentVersion) {
+            if (latestVersion != _currentVersion) {
                 ; 업데이트가 필요한 경우
                 fileInfo := Map(
                     "isAvailable", TRUE,
                     "fileName", response["assets"][1]["name"],
                     "destination", tempFile := A_Temp,
-                    "fullPath",  tempFile := A_Temp "\" A_ScriptName ".new",
+                    "fullPath", tempFile := A_Temp "\" A_ScriptName ".new",
                     "downloadUrl", response["assets"][1]["browser_download_url"],
                     "size", response["assets"][1]["size"]
                 )
                 return this.PerformUpdate(fileInfo)
             }
             ; 업데이트가 필요하지 않은 경우
-            SendDebugMsg("최신 버전입니다.")
             return true
         }
         catch Error as e {
@@ -355,7 +353,7 @@ class Downloader {
 }
 
 ;; 메인 UI 정의
-d := 2.25
+d := 1.25
 width := Round(560 * d)
 height := Round(432 * d)
 radius := Round(8 * d)
@@ -364,7 +362,7 @@ ui := Gui("-SysMenu -Caption +LastFound")
 ui.OnEvent('Close', (*) => ExitApp())
 ui.Show("w560 h432")
 _instanceWindow := WinGetID(A_ScriptName, , "Code",)
-WinSetTitle _appTitle . " " . _version, _instanceWindow
+WinSetTitle _appTitle . " " . _currentVersion, _instanceWindow
 WinSetRegion Format("0-0 w{1} h{2} r{3}-{3}", width, height, radius), _instanceWindow
 
 ;; 메인 UI 생성 (웹뷰2)
@@ -459,6 +457,12 @@ class ConfigGUI {
         }
     }
 }
+
+;; 환경값 재설정
+_delayConfig := _userIni.Delay
+_instanceNameConfig := _userIni.InstanceName
+_acceptingTermConfig := _userIni.AcceptingTerm * 60000
+_deletingTermConfig := _userIni.BufferTerm * 60000
 
 ; 환경설정 GUI 정의
 OpenConfigGUI() {
@@ -612,12 +616,6 @@ F8:: {
     GuiInstance.Dismiss()
 }
 
-;; 환경값 재설정
-_delayConfig := _userIni.Delay
-_instanceNameConfig := _userIni.InstanceName
-_acceptingTermConfig := _userIni.AcceptingTerm * 60000
-_deletingTermConfig := _userIni.BufferTerm * 60000
-
 ;; 디버그용 GUI 정의
 global statusGUI := Gui()
 statusGUI.Opt("-SysMenu +Caption")
@@ -632,7 +630,7 @@ SendDebugMsg('Debug message will be shown here.')
 
 SendUiMsg("포켓몬 카드 게임 포켓 갤러리")
 SendUiMsg(" ")
-SendUiMsg("바나나 무한 불판 매크로 " _version " by Banana-juseyo")
+SendUiMsg("바나나 무한 불판 매크로 " _currentVersion " by Banana-juseyo")
 SendUiMsg(" ")
 SendUiMsg("🍌 매크로 초기화 완료")
 
@@ -641,6 +639,8 @@ _main(_currentLogic := "00") {
     global _isRunning
     global targetWindowHwnd
     global GuiInstance
+    global _instanceNameConfig := _userIni.InstanceName
+    SetTitleMatchMode 3
 
     if ( NOT _instanceNameConfig) {
         GuiInstance := ConfigGUI()
@@ -648,18 +648,22 @@ _main(_currentLogic := "00") {
         SetTimer(() => FinishRun(), -1)
         return
     }
+    if ( NOT WinExist(_instanceNameConfig)) {
+        GuiInstance := ConfigGUI()
+        SendUiMsg("[오류] 인스턴스 이름이 잘못 되었습니다.")
+        SetTimer(() => FinishRun(), -1)
+        return
+    }
 
     targetWindowHwnd := WinExist(_instanceNameConfig)
-    _isRunning := TRUE
-
-    if targetWindowHwnd {
-        WinGetPos(&targetWindowX, &targetWindowY, &targetWindowWidth, &targetWindowHeight, targetWindowHwnd)
-        global targetControlHandle := ControlGetHwnd('nemuwin1', targetWindowHwnd)
-    }
-    if !targetWindowHwnd {
+    if ( NOT targetWindowHwnd) {
         SendUiMsg("[오류] 입력한 인스턴스에서 PtcgP 앱을 확인할 수 없습니다 : " _instanceNameConfig)
         SetTimer(() => FinishRun(), -1)
         return
+    }
+    else if targetWindowHwnd {
+        WinGetPos(&targetWindowX, &targetWindowY, &targetWindowWidth, &targetWindowHeight, targetWindowHwnd)
+        global targetControlHandle := ControlGetHwnd('nemuwin1', targetWindowHwnd)
     }
     WinMove(, , 527, 970, targetWindowHwnd)
     WinActivate (targetWindowHwnd)
@@ -671,6 +675,7 @@ _main(_currentLogic := "00") {
     global _recentTick, _currentTick
     global failCount
 
+    _isRunning := TRUE
     _nowAccepting := TRUE
     _thisUserPass := FALSE
     _thisUserFulfilled := FALSE
@@ -688,6 +693,12 @@ _main(_currentLogic := "00") {
         switch _currentLogic {
             ; 00. 화면 초기화
             case "00":
+                ;; 환경값 재설정
+                _delayConfig := _userIni.Delay
+                _instanceNameConfig := _userIni.InstanceName
+                _acceptingTermConfig := _userIni.AcceptingTerm * 60000
+                _deletingTermConfig := _userIni.BufferTerm * 60000
+
                 SendUiMsg("✅ 친구 추가부터 시작")
                 caseDescription := '화면 초기화'
                 SendUiMsg("[Current] " . _currentLogic . " : " . caseDescription)
@@ -966,7 +977,6 @@ _main(_currentLogic := "00") {
                 caseDescription := '신청 처리'
                 SendUiMsg("[Current] " . _currentLogic . " : " . caseDescription)
                 if (_thisUserPass == TRUE && _thisUserFulfilled == FALSE) {
-                    SendUiMsg("[승인 진행]")
                     match := ImageSearch(
                         &matchedX
                         , &matchedY
@@ -1017,7 +1027,6 @@ _main(_currentLogic := "00") {
 
                 }
                 if (_thisUserPass == FALSE && _thisUserFulfilled == FALSE) {
-                    SendUiMsg("[거절 진행]")
                     match := ImageSearch(
                         &matchedX
                         , &matchedY
@@ -1111,7 +1120,13 @@ _main(_currentLogic := "00") {
 
                 ;; 거절 로직 시작
             case "D00":
-                SendUiMsg("🗑️ 친구 삭제 부터 작업 시작")
+                ;; 환경값 재설정
+                _delayConfig := _userIni.Delay
+                _instanceNameConfig := _userIni.InstanceName
+                _acceptingTermConfig := _userIni.AcceptingTerm * 60000
+                _deletingTermConfig := _userIni.BufferTerm * 60000
+
+                SendUiMsg("🗑️ 친구 삭제 부터 시작")
                 caseDescription := '친구 삭제를 위해 메뉴 초기화'
                 SendUiMsg("[Current] " . _currentLogic . " : " . caseDescription)
                 failCount := 0
@@ -1433,7 +1448,6 @@ InitLocation(Destination := "RequestList") {
             , getScreenYbyWindowPercentage('90%')
             , '*100 ' . _imageFile_friendMenuButton)
         if (match == 1) {
-            SendUiMsg("화면 인식 성공")
             targetX := matchedX - targetWindowX + 10
             targetY := matchedY - targetWindowY + 10
             ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
@@ -1491,9 +1505,30 @@ SendDebugMsg(Message) {
 
 ; ui 로그 창에 메시지 표시 & 기록
 SendUiMsg(Message) {
-    wv.ExecuteScriptAsync("addLog('" Message "')")
-    wv.ExecuteScriptAsync("adjustTextAreaHeight()")
-    _logRecord(Message)
+    global messageQueue
+    messageQueue.Push(Message)
+
+    i := InStr(wv.Source, "/", , -1)
+    w := SubStr(wv.source, i + 1)
+
+    if (w == "index.html") {
+        _messageQueueHandler()
+    }
+    else {
+        SetTimer(_messageQueueHandler, 100)
+    }
+}
+
+_messageQueueHandler() {
+    global messageQueue
+
+    for Message in messageQueue {
+        wv.ExecuteScriptAsync("addLog('" Message "')")
+        wv.ExecuteScriptAsync("adjustTextAreaHeight()")
+        messageQueue.RemoveAt(1)
+        _logRecord(Message)
+    }
+    SetTimer , 0
 }
 
 _logRecord(text) {
@@ -1527,7 +1562,7 @@ FinishRun() {
     global _isRunning
     _isRunning := FALSE
     wv.ExecuteScriptAsync("SwitchUIMode('" FALSE "')")
-    SendUiMsg("⏹️ 동작을 중지합니다.")
+    ; SendUiMsg("⏹️ 동작을 중지합니다.")
 }
 
 TogglePauseMode() {
