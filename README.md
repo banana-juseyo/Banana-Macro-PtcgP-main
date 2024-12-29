@@ -1,3 +1,5 @@
+![NVIDIA_Share_pdRrHjky2k](https://github.com/user-attachments/assets/ec6bd91b-3e94-4bbb-946b-435b9fd8b050)  
+  
 # 소개
 바나나 무한 불판 매크로는 포켓몬 카드 게임 Pocket의 무한 불판 매크로입니다.  
 이미지 맥스의 유료화 정책에 반대하여 오픈소스 기반으로 만들어졌습니다.  
