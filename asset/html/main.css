@@ -247,6 +247,22 @@ textarea::-webkit-scrollbar {
     display: none;
 }
 
+#gitHubLink {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+}
+
+.banana {
+    width: 16px;
+    height: 16px;
+    background-image: url('../image/_app_banana.png');
+    background-size: 16px;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
 #gitHubLink > span {
     color: #1C81E6;
     font-family: Pretendard;
@@ -305,7 +321,7 @@ textarea::-webkit-scrollbar {
     border-radius: 4px;
     background: #FAFAFA;
     box-shadow: 2px 2px 0px 0px #DFDFDF;
-    /* cursor: pointer; */
+    cursor: pointer;
 }
 
 .footerButton:hover {

@@ -360,6 +360,9 @@ radius := Round(8 * d)
 
 ui := Gui("-SysMenu -Caption +LastFound")
 ui.OnEvent('Close', (*) => ExitApp())
+
+hIcon := LoadPicture(".\asset\image\app.ico", "Icon1 w" 32 " h" 32, &imgtype)
+SendMessage(0x0080, 1, hIcon, ui)
 ui.Show("w560 h432")
 _instanceWindow := WinGetID(A_ScriptName, , "Code",)
 WinSetTitle _appTitle . " " . _currentVersion, _instanceWindow
@@ -630,9 +633,9 @@ SendDebugMsg('Debug message will be shown here.')
 
 SendUiMsg("포켓몬 카드 게임 포켓 갤러리")
 SendUiMsg(" ")
-SendUiMsg("바나나 무한 불판 매크로 " _currentVersion " by Banana-juseyo")
+SendUiMsg("바나나 무한 불판 매크로 " _currentVersion " by banana-juseyo")
 SendUiMsg(" ")
-SendUiMsg("🍌 매크로 초기화 완료")
+SendUiMsg("매크로 초기화 완료")
 
 ;; 메인 함수 선언
 _main(_currentLogic := "00") {
