@@ -7,7 +7,7 @@
 
 
 # 설치
-1. AutoHotkey 최신 버전을 다운로드 & 설치  
+1. AutoHotkey v2 최신 버전을 설치  
 [**다운로드**](https://www.autohotkey.com/download/ahk-v2.exe)  
   
 2. 바나나 매크로를 다운로드 & 원하는 곳에 압축 풀기  
