@@ -931,7 +931,7 @@ _main(_currentLogic := "00") {
                         delayShort()
                     }
                     else if (match == 0) {
-                        SendUiMsg("[여권 인식 실패] 잠시 후 재시도 ")
+                        SendUiMsg("[여권 미확인] 잠시 후 재시도 ")
                         failCount := failCount + 1
                         delayLong()
                     }
@@ -952,33 +952,37 @@ _main(_currentLogic := "00") {
             case "03-B":
                 caseDescription := '유저 화면 재진입, 신청 처리'
                 SendUiMsg("[Current] " . _currentLogic . " : " . caseDescription)
-                match := ImageSearch(
-                    &matchedX
-                    , &matchedY
-                    , getScreenXbyWindowPercentage('38%')
-                    , getScreenYbyWindowPercentage('5%')
-                    , getScreenXbyWindowPercentage('62%')
-                    , getScreenYbyWindowPercentage('90%')
-                    , '*100 ' . _imageFile_userDetailMybest)
-                if (match == 1) {
-                    ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 3, 'NA', ,) ;
-                    delayShort()
-                    _currentLogic := "03-C"
-                    failCount := 0
-                }
-                else if (match == 0) {
-                    ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 1, 'NA', ,)
-                    delayShort()
-                    ControlClick(targetControlHandle, targetWindowHwnd, , 'WD', 1, 'NA', ,)
-                    delayShort()
-                    failCount := failCount + 1
-                }
-                if (failCount >= 5) {
-                    SendUiMsg("[오류] 승인 화면 진입 실패. 화면을 초기화 합니다.")
-                    _currentLogic := "01"
-                    InitLocation("RequestList")
-                    failCount := 0
-                }
+                ; match := ImageSearch(
+                ;     &matchedX
+                ;     , &matchedY
+                ;     , getScreenXbyWindowPercentage('38%')
+                ;     , getScreenYbyWindowPercentage('5%')
+                ;     , getScreenXbyWindowPercentage('62%')
+                ;     , getScreenYbyWindowPercentage('90%')
+                ;     , '*100 ' . _imageFile_userDetailMybest)
+                ; if (match == 1) {
+                ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 5, 'NA', ,) ;
+                delayShort()
+                ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 5, 'NA', ,) ;
+                delayShort()
+                ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 5, 'NA', ,) ;
+                delayShort()
+                _currentLogic := "03-C"
+                failCount := 0
+                ; }
+                ; else if (match == 0) {
+                ;     ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 1, 'NA', ,)
+                ;     delayShort()
+                ;     ControlClick(targetControlHandle, targetWindowHwnd, , 'WD', 1, 'NA', ,)
+                ;     delayShort()
+                ;     failCount := failCount + 1
+                ; }
+                ; if (failCount >= 5) {
+                ;     SendUiMsg("[오류] 승인 화면 진입 실패. 화면을 초기화 합니다.")
+                ;     _currentLogic := "01"
+                ;     InitLocation("RequestList")
+                ;     failCount := 0
+                ; }
 
             case "03-C":
                 caseDescription := '신청 처리'
@@ -1039,11 +1043,11 @@ _main(_currentLogic := "00") {
                     match := ImageSearch(
                         &matchedX
                         , &matchedY
-                        , getScreenXbyWindowPercentage('12%')
-                        , getScreenYbyWindowPercentage('70%')
-                        , getScreenXbyWindowPercentage('88%')
-                        , getScreenYbyWindowPercentage('77%')
-                        , '*50 ' . _imageFile_userDetailDecline)
+                        , getScreenXbyWindowPercentage('10%')
+                        , getScreenYbyWindowPercentage('60%')
+                        , getScreenXbyWindowPercentage('90%')
+                        , getScreenYbyWindowPercentage('80%')
+                        , '*100 ' . _imageFile_userDetailDecline)
                     if (match == 1) {
                         targetX := matchedX - targetWindowX
                         targetY := matchedY - targetWindowY
@@ -1060,10 +1064,10 @@ _main(_currentLogic := "00") {
                     match := ImageSearch(
                         &matchedX,
                         &matchedY,
-                        getScreenXbyWindowPercentage('12%'),
-                        getScreenYbyWindowPercentage('70%'),
-                        getScreenXbyWindowPercentage('88%'),
-                        getScreenYbyWindowPercentage('77%'),
+                        getScreenXbyWindowPercentage('10%'),
+                        getScreenYbyWindowPercentage('60%'),
+                        getScreenXbyWindowPercentage('90%'),
+                        getScreenYbyWindowPercentage('80%'),
                         '*50 ' . _imageFile_userDetailFriendNow)
                     if (match == 1) {
                         ControlClick('X' . getWindowXbyWindowPercentage('50%') . ' Y' .
@@ -1600,7 +1604,6 @@ UpdateUserIni(obj) {
     IniWrite obj.AcceptingTerm, "Settings.ini", "UserSettings", "AcceptingTerm"
     IniWrite obj.BufferTerm, "Settings.ini", "UserSettings", "BufferTerm"
 }
-
 
 UpdateHtmlVersion(version) {
     wv.ExecuteScriptAsync("updateVersionText('" version "')")
