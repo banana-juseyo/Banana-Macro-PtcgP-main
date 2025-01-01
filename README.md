@@ -5,7 +5,9 @@
 이미지 맥스의 유료화 정책에 반대하여 오픈소스 기반으로 만들어졌습니다.  
 무료 오픈소스 프로그램인 AutoHotkey를 사용합니다.  
 
-
+# 최신 버전 다운로드
+[**다운로드**](https://github.com/banana-juseyo/Banana-Macro-PtcgP/archive/refs/heads/main.zip)  
+  
 # 설치
 1. AutoHotkey v2 최신 버전을 설치  
 [**다운로드**](https://www.autohotkey.com/download/ahk-v2.exe)  
@@ -97,5 +99,9 @@ A: 정식으로 테스트한 것은 아니지만 폴더를 여러개 복사해�
   
 - **Q: 매크로를 켜니까 Error while update라고 뜨면서 실행이 안됨**  
 A: 자동 업데이트 중에 꼬인 것임. 매크로 파일 새로 받아주기 바람.  
-  
+
+- **Q: 오토핫키 깔려있는데 banana.ahk 파일이 실행이 안됨**  
+A: 아마도 레어팩 매크로에 쓰이는 v1이 깔려있을 건데, v2를 깔아야 함.
+오토핫키는 v1과 v2가 호환이 안됨.
+v1 v2 컴에 둘다 깔아놓으면 시작할때 뭘로 실행할지 물어볼것임.  
   
