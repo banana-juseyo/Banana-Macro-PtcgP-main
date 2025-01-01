@@ -181,8 +181,8 @@ class Downloader {
             }
         }
         try {
-            TextCtrl.Text := "다운로드 중 : " fileName
-            SetTimer(() => This.UpdateDownloadProgress(_fullPath, size), 100)
+            TextCtrl.Text := "다운로드 파일 확인 중 : " fileName
+            SetTimer(() => This.UpdateDownloadProgress(_fullPath, fileName, size), 100)
             Download(url, _fullPath)
 
             if (FileGetSize(_fullPath) >= size) {
@@ -200,12 +200,12 @@ class Downloader {
     }
 
     ; 다운로드 진행에 따라 progress 업데이트
-    UpdateDownloadProgress(_fullPath, _fullSize) {
+    UpdateDownloadProgress(_fullPath, fileName, _fullSize) {
         global ProgressBar, _progress
         try {
             _currentSize := FileGetSize(_fullPath)
             _progress := Floor((_currentSize / _fullSize) * 100) ; 진행률 계산
-
+            TextCtrl.Text := "다운로드 중 : " fileName
             ProgressBar.Value := _progress
 
             if (_currentSize >= _fullSize) {
