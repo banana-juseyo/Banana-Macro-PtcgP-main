@@ -22,6 +22,8 @@ global _repoName := "Banana-Macro-PtcgP"
 #Include .\app\WebView2.ahk
 #include .\app\_JXON.ahk
 
+FileEncoding "UTF-8"
+
 ;; 이미지 변수
 global _imageFile_friendRequestListCard := A_ScriptDir . "\asset\match\friendRequestListCard.png"
 global _imageFile_friendRequestListEmpty := A_ScriptDir . "\asset\match\friendRequestListEmpty.png"
@@ -66,6 +68,18 @@ global _deletingTermConfig := 2 * 60000
 ; 로그 파일 설정
 global logFile := A_ScriptDir . "\log\" . A_YYYY . A_MM . A_DD . "_" . A_Hour . A_Min . A_Sec . "_" . "log.txt"
 
+;; 디버그용 GUI 정의
+global statusGUI := Gui()
+statusGUI.Opt("-SysMenu +Caption")
+RecentTextCtrl := statusGUI.Add("Text", "x10 y10 w360 h20")
+RecentTextCtrl.SetFont("s11", "Segoe UI Emoji, Segoe UI")
+OldTextCtrl := statusGUI.Add("Text", "x10 y30 w360 h160")
+OldTextCtrl.SetFont("C666666", "Segoe UI Emoji, Segoe UI")
+if (_debug == TRUE) {
+    statusGUI.Show("")
+}
+SendDebugMsg('Debug message will be shown here.')
+
 ;; 실행 시 업데이트/필수 파일 자동 다운로드 로직
 DownloaderInstance := Downloader()
 ;; msedge.dll 파일 확인
@@ -74,7 +88,10 @@ DownloaderInstance.CheckMsedgeDLL()
 ; 임시 폴더의 업데이트 스크립트 삭제
 updateScriptPath := A_Temp "\updater.ahk"
 if FileExist(updateScriptPath)
-    FileDelete(updateScriptPath)
+    try FileDelete(updateScriptPath)
+    catch Error as e {
+        SendDebugMsg ('91::updater.ahk 삭제 중 오류 발생 : ' e.Message)
+    }
 ; 스크립트 업데이트 실행
 DownloaderInstance.CheckForUpdates()
 
@@ -124,7 +141,7 @@ class Downloader {
         _fullpath := A_ScriptDir . _msedgeProjectPath
 
         if (FileExist(_fullpath) && FileGetSize(_fullpath) >= 283108904) {
-            SendDebugMsg("업데이트할 파일이 없습니다.")
+            SendDebugMsg("142::업데이트할 파일이 없습니다.")
         } else {
             FileInfo := DownloaderInstance.GetRepoApi(_msedgeProjectPath)
             if (FileInfo["isAvailable"]) {
@@ -158,7 +175,10 @@ class Downloader {
 
         ; 파일 확인
         if FileExist(_fullPath) {
-            FileDelete(_fullPath)
+            try FileDelete(_fullPath)
+            catch Error as e {
+                SendDebugMsg("178::기존 파일 삭제 중 오류 발생 : " e.Message)
+            }
         }
         try {
             TextCtrl.Text := "다운로드 중 : " fileName
@@ -309,7 +329,10 @@ class Downloader {
             d := DownloaderInstance.Download(FileInfo, _fullpath)
             ; 현재 스크립트 백업
             if FileExist(backupFile)
-                FileDelete(backupFile)
+                try FileDelete(backupFile)
+                catch Error as e {
+                    SendDebugMsg("332::기존 백업 파일 삭제 중 오류 발생 : " e.Message)
+                }
             FileCopy(A_ScriptFullPath, backupFile)
             ; 업데이트 스크립트 파일 생성
             updateScriptPath := this.CreateUpdateScript(_fullpath)
@@ -335,17 +358,28 @@ class Downloader {
         updateScript .= 'try {`n'
         updateScript .= 'if FileExist(originalFile)`n'
         updateScript .= 'FileDelete(originalFile)`n'
+        updateScript .= '} Catch Error as e {`n'
+        updateScript .= 'MsgBox("360::업데이트 중 오류가 발생했습니다. ``n 오류가 계속되면 바나나 매크로를 새로 다운로드 받아주세요.``n" . e.Message)`n'
+        updateScript .= '}`n'
+        updateScript .= 'try {`n'
         updateScript .= 'FileMove(newFile, originalFile)`n'
+        updateScript .= '} Catch Error as e {`n'
+        updateScript .= 'MsgBox("364::업데이트 중 오류가 발생했습니다. ``n 오류가 계속되면 바나나 매크로를 새로 다운로드 받아주세요.``n" . e.Message)`n'
+        updateScript .= '}`n'
+        updateScript .= 'try {`n'
         updateScript .= 'Run(originalFile)`n'
         updateScript .= '} Catch Error as e {`n'
-        updateScript .= 'MsgBox("Error While Update: " . e.Message)`n'
+        updateScript .= 'MsgBox("368::업데이트 진행 중 오류가 발생했습니다. ``n 오류가 계속되면 바나나 매크로를 새로 다운로드 받아주세요.``n" . e.Message)`n'
         updateScript .= '}`n'
         updateScript .= 'ExitApp'
 
         ; 업데이트 스크립트 임시 파일 생성
         updateScriptPath := A_Temp "\updater.ahk"
         if FileExist(updateScriptPath)
-            FileDelete(updateScriptPath)
+            try FileDelete(updateScriptPath)
+            catch Error as e {
+                SendDebugMsg("381::기존 updater.ahk 파일 삭제 중 오류 발생 : " e.Message)
+            }
 
         FileAppend(updateScript, updateScriptPath)
         return updateScriptPath
@@ -621,18 +655,6 @@ F8:: {
     GuiInstance.Dismiss()
 }
 
-;; 디버그용 GUI 정의
-global statusGUI := Gui()
-statusGUI.Opt("-SysMenu +Caption")
-RecentTextCtrl := statusGUI.Add("Text", "x10 y10 w360 h20")
-RecentTextCtrl.SetFont("s11", "Segoe UI Emoji, Segoe UI")
-OldTextCtrl := statusGUI.Add("Text", "x10 y30 w360 h160")
-OldTextCtrl.SetFont("C666666", "Segoe UI Emoji, Segoe UI")
-if (_debug == TRUE) {
-    statusGUI.Show("")
-}
-SendDebugMsg('Debug message will be shown here.')
-
 SendUiMsg("포켓몬 카드 게임 포켓 갤러리")
 SendUiMsg(" ")
 SendUiMsg("바나나 무한 불판 매크로 " _currentVersion " by banana-juseyo")
@@ -885,10 +907,8 @@ _main(_currentLogic := "00") {
                     if (match == 1) {
                         targetX := (matchedX - targetWindowX) + 20
                         targetY := (matchedY - targetWindowY) + 100
+                        delayShort()
                         ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        delayShort() ; // 오류 자꾸 발생해서 2중 클릭 예외 처리
-                        ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        ; _delayLong() ; // 1배속
                         _currentLogic := "03-A"
                         failCount := 0
                         delayLong()
@@ -1009,6 +1029,7 @@ _main(_currentLogic := "00") {
                     else if (match == 0) {
                         failCount := failCount + 1
                         ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 3, 'NA', ,) ;
+                        delayShort()
 
                         ; 재시도 후 failsafe, 해당 유저의 신청 포기 처리, 현재 case 정보 로그 남기기
                         match := ImageSearch(
@@ -1545,7 +1566,7 @@ _messageQueueHandler() {
         messageQueue.RemoveAt(1)
         _logRecord(Message)
     }
-    SetTimer , 0
+    SetTimer(_messageQueueHandler, 0)
 }
 
 _logRecord(text) {
