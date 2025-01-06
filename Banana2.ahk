@@ -20,8 +20,9 @@ global _repoName := "Banana-Macro-PtcgP"
 
 #Requires AutoHotkey v2.0
 #Include .\app\WebView2.ahk
-#include .\app\_JXON.ahk
-#include .\app\MatchLibrary.ahk
+#Include .\app\_JXON.ahk
+#Include .\app\MatchLibrary.ahk
+#Include .\app\ImagePut.ahk
 
 ;; 이미지 변수
 global _imageFile_friendRequestListCard := A_ScriptDir . "\asset\match\friendRequestListCard.png"
@@ -44,13 +45,13 @@ global _imageFile_appIcon := A_ScriptDir . "\asset\image\_app_Icon.png"
 global _imageFile_close := A_ScriptDir . "\asset\image\_app_Close.png"
 global _imageFile_restart := A_ScriptDir . "\asset\image\_app_Restart.png"
 
-; 글로벌 변수
+; 전역 변수
 global g_IsRunning := FALSE
 global _isPausing := FALSE
-global _debug := FALSE
+global _debug := TRUE
 global messageQueue := []
-global _downloaderGUIHwnd := ""
-global _configGUIHwnd := ""
+global _downloaderGUIWindow := ""
+global _configGUIWindow := ""
 global g_CurrentLogic := ""
 global g_CaseDescription := ""
 global g_CurrentResolution := ""
@@ -59,6 +60,18 @@ global recentText := ""
 global RecentTextCtrl := {}
 global oldTexts := ""
 global g_UserIni := {}
+global targetWindowX := ''
+global targetWindowY := ''
+global targetWindowWidth := ''
+global targetWindowHeight := ''
+global _thisUserPass := ''
+global _thisUserFulfilled := ''
+global targetControl := ''
+global targetControlX := ''
+global targetControlY := ''
+global targetControlWidth := ''
+global targetControlHeight := ''
+global targetControlHeightMargin := ''
 global Match := MatchClass()
 
 ; 환경값 초기화 & 기본값
@@ -69,6 +82,18 @@ global _deletingTermConfig := 2 * 60000
 
 ; 로그 파일 설정
 global logFile := A_ScriptDir . "\log\" . A_YYYY . A_MM . A_DD . "_" . A_Hour . A_Min . A_Sec . "_" . "log.txt"
+
+;; 디버그용 GUI 정의
+global statusGUI := Gui()
+statusGUI.Opt("-SysMenu +Caption")
+RecentTextCtrl := statusGUI.Add("Text", "x10 y10 w360 h20")
+RecentTextCtrl.SetFont("s11", "Segoe UI Emoji, Segoe UI")
+OldTextCtrl := statusGUI.Add("Text", "x10 y30 w360 h160")
+OldTextCtrl.SetFont("C666666", "Segoe UI Emoji, Segoe UI")
+if (_debug == TRUE) {
+    statusGUI.Show("")
+}
+SendDebugMsg('Debug message will be shown here.')
 
 ;; 실행 시 업데이트/필수 파일 자동 다운로드 로직
 DownloaderInstance := Downloader()
@@ -90,19 +115,19 @@ class Downloader {
     _progress := 0
 
     __New() {
-        if (_downloaderGUIHwnd && WinExist(_downloaderGUIHwnd)) {
-            WinActivate(_downloaderGUIHwnd)
-            this.gui := GuiFromHwnd(_downloaderGUIHwnd)
+        if (_downloaderGUIWindow && WinExist(_downloaderGUIWindow)) {
+            WinActivate(_downloaderGUIWindow)
+            this.gui := GuiFromHwnd(_downloaderGUIWindow)
         }
     }
 
     ; 다운로더 GUI 호출
     OpenDownloaderGUI() {
-        global _downloaderGUIHwnd
+        global _downloaderGUIWindow
         global ProgressBar, TextCtrl
 
         _gui := GUI()
-        _downloaderGUIHwnd := _gui.hwnd
+        _downloaderGUIWindow := _gui.hwnd
         _gui.Opt("-SysMenu -Caption")
         _gui.Title := "자동 업데이트"
 
@@ -115,7 +140,7 @@ class Downloader {
     }
 
     Dismiss() {
-        if (WinActive(_downloaderGUIHwnd)) {
+        if (WinActive(_downloaderGUIWindow)) {
             This.gui.Destroy()
             return
         }
@@ -194,7 +219,7 @@ class Downloader {
 
             if (_currentSize >= _fullSize) {
                 _progress := 100
-                SetTimer , 0
+                SetTimer(this.UpdateDownloadProgress, 0)
                 return
             }
         }
@@ -373,9 +398,9 @@ calculatedWidth := 560 * dpiScale
 calculatedHeigth := 432 * dpiScale
 
 ui.Show("w" calculatedWidth " h" calculatedHeigth)
-_instanceWindow := WinGetID(A_ScriptName, , "Code",)
-WinSetTitle _appTitle . " " . _currentVersion, _instanceWindow
-WinSetRegion Format("0-0 w{1} h{2} r{3}-{3}", calculatedWidth, calculatedHeigth, radius), _instanceWindow
+g_UiWindow := WinGetID(A_ScriptName, , "Code",)
+WinSetTitle _appTitle . " " . _currentVersion, g_UiWindow
+WinSetRegion Format("0-0 w{1} h{2} r{3}-{3}", calculatedWidth, calculatedHeigth, radius), g_UiWindow
 
 ;; 메인 UI 생성 (웹뷰2)
 wvc := WebView2.CreateControllerAsync(ui.Hwnd, { AdditionalBrowserArguments: "--enable-features=msWebView2EnableDraggableRegions" })
@@ -394,7 +419,7 @@ NewWindowRequestedHandler(wv2, arg) {
 ;; 메인 UI에서 넘어오는 값을 확인하는 리스너 -> Loop 중 함수로 넘기면 실행이 안됨 (우선순위 이슈)
 nwr := wv.WebMessageReceived(HandleWebMessageReceived)
 HandleWebMessageReceived(sender, args) {
-    global _isPausing, _configGUIHwnd, GuiInstance
+    global _isPausing, _configGUIWindow, GuiInstance
 
     message := args.TryGetWebMessageAsString()
     switch message {
@@ -445,9 +470,9 @@ class ConfigGUI {
     gui := ""
 
     __New() {
-        if (_configGUIHwnd && WinExist(_configGUIHwnd)) {
-            WinActivate(_configGUIHwnd)
-            this.gui := GuiFromHwnd(_configGUIHwnd)
+        if (_configGUIWindow && WinExist(_configGUIWindow)) {
+            WinActivate(_configGUIWindow)
+            this.gui := GuiFromHwnd(_configGUIWindow)
         }
         else {
             this.gui := OpenConfigGUI()
@@ -463,7 +488,7 @@ class ConfigGUI {
     }
 
     Dismiss() {
-        if (WinActive(_configGUIHwnd)) {
+        if (WinActive(_configGUIWindow)) {
             this.gui.Destroy()
             return
         }
@@ -479,10 +504,10 @@ _displayResolutionConfig := g_UserIni.DisplayResolution
 
 ; 환경설정 GUI 정의
 OpenConfigGUI() {
-    global _configGUIHwnd
+    global _configGUIWindow
 
     _gui := GUI()
-    _configGUIHwnd := _gui.hwnd
+    _configGUIWindow := _gui.hwnd
     _gui.Opt("-SysMenu +LastFound +Owner" ui.Hwnd)
     _gui.Title := "환경 설정"
     _gui.BackColor := "DADCDE"
@@ -644,33 +669,14 @@ F8:: {
     Reload
 }
 
-^E:: {
-    r := Match.MatchImage("FriendsMenuButton")
-    if (r == 1) {
-        MsgBox("Hi")
-    }
-}
-
-#HotIf WinActive(_configGUIHwnd)
+#HotIf WinActive(_configGUIWindow)
 ~Enter:: {
-    _gui := GuiFromHwnd(_configGUIHwnd)
+    _gui := GuiFromHwnd(_configGUIWindow)
     GuiInstance.Submit()
 }
 ~Esc:: {
     GuiInstance.Dismiss()
 }
-
-;; 디버그용 GUI 정의
-global statusGUI := Gui()
-statusGUI.Opt("-SysMenu +Caption")
-RecentTextCtrl := statusGUI.Add("Text", "x10 y10 w360 h20")
-RecentTextCtrl.SetFont("s11", "Segoe UI Emoji, Segoe UI")
-OldTextCtrl := statusGUI.Add("Text", "x10 y30 w360 h160")
-OldTextCtrl.SetFont("C666666", "Segoe UI Emoji, Segoe UI")
-if (_debug == TRUE) {
-    statusGUI.Show("")
-}
-SendDebugMsg('Debug message will be shown here.')
 
 SendUiMsg("포켓몬 카드 게임 포켓 갤러리")
 SendUiMsg(" ")
@@ -702,18 +708,34 @@ class MatchClass {
         }
         return r
     }
+
 }
 
 ;; 메인 함수 선언
 Main() {
+    ; 전역 변수 초기화
     global Match
     global g_CurrentLogic
     global g_CaseDescription
     global g_IsRunning
-    global targetWindowHwnd
+    global targetWindow
     global GuiInstance
     global g_CurrentResolution := g_UserIni.DisplayResolution
     global _instanceNameConfig := g_UserIni.InstanceName
+
+    global targetWindowX, targetWindowY, targetWindowWidth, targetWindowHeight, _thisUserPass, _thisUserFulfilled
+    global targetControlX, targetControlY, targetControlWidth, targetControlHeight, targetControlHeightMargin
+    global _recentTick, _currentTick
+    global failCount
+    global _nowAccepting
+
+    g_IsRunning := TRUE
+    _nowAccepting := TRUE
+    _thisUserPass := FALSE
+    _thisUserFulfilled := FALSE
+    _recentTick := A_TickCount
+    _currentTick := A_TickCount
+
     SetTitleMatchMode 3
 
     if ( NOT _instanceNameConfig) {
@@ -724,38 +746,29 @@ Main() {
     }
     if ( NOT WinExist(_instanceNameConfig)) {
         GuiInstance := ConfigGUI()
-        SendUiMsg("[오류] 인스턴스 이름이 잘못 되었습니다.")
+        SendUiMsg("[오류] 입력한 이름의 인스턴스를 찾을 수 없습니다.")
         SetTimer(() => FinishRun(), -1)
         return
     }
 
-    targetWindowHwnd := WinExist(_instanceNameConfig)
-    if ( NOT targetWindowHwnd) {
+    targetWindow := WinExist(_instanceNameConfig)
+    if ( NOT targetWindow) {
         SendUiMsg("[오류] 입력한 인스턴스에서 PtcgP 앱을 확인할 수 없습니다 : " _instanceNameConfig)
         SetTimer(() => FinishRun(), -1)
         return
     }
-    else if targetWindowHwnd {
-        WinGetPos(&targetWindowX, &targetWindowY, &targetWindowWidth, &targetWindowHeight, targetWindowHwnd)
-        global targetControlHandle := ControlGetHwnd('nemuwin1', targetWindowHwnd)
+    else if targetWindow {
+        WinGetPos(&targetWindowX, &targetWindowY, &targetWindowWidth, &targetWindowHeight, targetWindow)
+        targetControl := ControlGetHwnd('nemuwin1', targetWindow)
+        ControlGetPos(&targetControlX, &targetControlY, &targetControlWidth, &targetControlHeight, targetControl)
+        targetControlHeightMargin := targetWindowHeight - targetControlHeight
     }
 
-    WinMove(, , 1, 1, targetWindowHwnd)
-    WinActivate (targetWindowHwnd)
+    if (g_CurrentResolution == "fhd") {
+        WinMove(, , 403, 970, targetWindow)
+    }
+    WinActivate (targetWindow)
     CoordMode("Pixel", "Screen")
-
-    ; 전역 변수 선언
-    global targetWindowX, targetWindowY, targetWindowWidth, targetWindowHeight, _thisUserPass, _thisUserFulfilled
-    global _nowAccepting
-    global _recentTick, _currentTick
-    global failCount
-
-    g_IsRunning := TRUE
-    _nowAccepting := TRUE
-    _thisUserPass := FALSE
-    _thisUserFulfilled := FALSE
-    _recentTick := A_TickCount
-    _currentTick := A_TickCount
 
     loop {
         if (!g_IsRunning) {
@@ -763,10 +776,10 @@ Main() {
         }
         ; 타겟 윈도우 재설정
         ; 타겟 윈도우의 크기를 동적으로 반영하기 위해 루프 속에서 실행
-        WinGetPos(&targetWindowX, &targetWindowY, &targetWindowWidth, &targetWindowHeight, targetWindowHwnd)
+        WinGetPos(&targetWindowX, &targetWindowY, &targetWindowWidth, &targetWindowHeight, targetWindow)
 
         switch g_CurrentLogic {
-            
+
             ; 00. 화면 초기화
             case "00":
                 ;; 환경값 재설정
@@ -777,16 +790,16 @@ Main() {
 
                 SendUiMsg("✅ 친구 추가부터 시작")
                 g_CaseDescription := '화면 초기화'
-                CaseStartLog()
-                InitLocation("RequestList")
-                g_CurrentLogic := "01"
+                LogicStartLog()
+                InitLocation('RequestList')
+                g_CurrentLogic := "1-01"
                 static globalRetryCount := 0
                 failCount := 0
 
                 ; 01. 친구 추가 확인
-            case "01":
-                global g_CaseDescription := '신청 확인'
-                CaseStartLog()
+            case "1-01":
+                g_CaseDescription := '신청 확인'
+                LogicStartLog()
 
                 elapsedTime := _getElapsedTime()
                 PhaseToggler(elapsedTime)
@@ -796,35 +809,7 @@ Main() {
                     SendUiMsg("[페이즈 전환] 수락을 중단합니다. " . Round(_deletingTermConfig / 60000) . "분 후 친구 삭제 시작.")
                     globalRetryCount := 0
                     Sleep(_deletingTermConfig)
-                }
-
-                if (_nowAccepting == TRUE && g_CurrentLogic == "01") {
-                    r := Match.MatchImage("FriendRequestListCard")
-                    if (r == 1) {
-                        targetX := Match._matchedX - targetWindowX
-                        targetY := Match._matchedY - targetWindowY - 50
-                        delayLong()
-                        ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        delayShort() ; // 오류 방지 위해 2중 클릭
-                        ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        g_CurrentLogic := "02-A"
-                        failCount := 0 ; // 유저 화면 진입 시 failCount 초기화
-                        globalRetryCount := 0
-                        delayLong()
-                    }
-                    else if (match == 0) {
-                        r := Match.MatchImage("FriendRequestListEmpty")
-                        if (r == 1) {
-                            SendUiMsg('[안내] 잔여 신청 목록이 없습니다. 10초 후 새로고침.')
-                            sleep(10000) ; 10초 중단
-                            InitLocation("RequestList")
-                            globalRetryCount := 0
-                        }
-                        else if (match == 0) { ; // 신청 목록 확인 실패, 일시적인 오류일 수 있어 failCount로 처리
-                            failCount := failCount + 1
-                            delayLong()
-                        }
-                    }
+                    continue
                 }
                 if (failCount >= 5) {
                     globalRetryCount := globalRetryCount + 1
@@ -833,48 +818,40 @@ Main() {
                         ExitApp
                     }
                     SendUiMsg("[오류] 신청 목록 확인 실패. 화면을 초기화 합니다.")
-                    InitLocation("RequestList")
-                    g_CurrentLogic := "01"
+                    InitLocation('RequestList')
+                    g_CurrentLogic := "1-01"
                     failCount := 0
                     delayShort()
+                    continue
                 }
 
-            case "02-A": ; // 02. 유저 디테일 // A. 화면 진입 확인
-                global g_CaseDescription := '유저 화면 진입'
-                CaseStartLog()
-                r := Match.MatchImage("UserDetailRequestFriend")
-                if (r == 1) {
-                    SendUiMsg("[오류] 유저의 신청 취소")
-                    _clickCloseModalButton()
-                    _thisUserFulfilled := TRUE
-                    g_CurrentLogic := "01"
-                }
-                else if (match == 0) {
-                    match := ImageSearch(
-                        &matchedX
-                        , &matchedY
-                        , getScreenXbyWindowPercentage('35%')
-                        , getScreenYbyWindowPercentage('80%')
-                        , getScreenXbyWindowPercentage('65%')
-                        , getScreenYbyWindowPercentage('92%')
-                        , '*50 ' . _imageFile_userDetailEmblem)
-                    if (match == 1) {
-                        ; ControlClick(targetControlHandle, targetWindowHandle, , 'WD', 1, 'NA', , ) ;
-                        ControlClick(targetControlHandle, targetWindowHwnd, , 'WD', 2, 'NA', ,) ;
-                        delayShort()
-                        ; _clickSafeArea() ; // 어째선지 호출이 안됨
-                        ControlClick(
-                            'X' . getWindowXbyWindowPercentage('98%') . ' Y' . getWindowYbyWindowPercentage('50%')
-                            , targetWindowHwnd, , 'Left', 2, 'NA', ,)
-                        g_CurrentLogic := "02-B"
-                        failCount := 0
-                        ; _delayLong() ; // 1배속
-                        delayShort() ; // 2배속
+                if (_nowAccepting == TRUE && g_CurrentLogic == "1-01") {
+                    xy := MatchObject("FriendRequestListCard")
+                    if xy {
+                        Click(xy)
+                        delayLong()
+                        TryLogicTransition('1-02')
+                        continue
                     }
-                    else if (match == 0) {
+                    else {
                         failCount := failCount + 1
-                        SendUiMsg("[안내] 유저화면 진입완료 대기 중")
                         delayShort()
+                        continue
+                    }
+
+                    ; // 신청화면에서 각종 예외 케이스 처리 -> fail count 합쳐야
+                    else if (match == 0) {
+                        xy := MatchObject("FriendRequestListEmpty")
+                        if xy {
+                            SendUiMsg("[안내] 잔여 신청 목록이 없습니다. 10초 후 새로고침.")
+                            sleep(10000) ; 10초 중단
+                            InitLocation('RequestList')
+                            globalRetryCount := 0
+                        }
+                        else if (match == 0) { ; // 신청 목록 확인 실패, 일시적인 오류일 수 있어 failCount로 처리
+                            failCount := failCount + 1
+                            delayLong()
+                        }
                     }
                     if (failCount >= 5) {
                         ; 잔여 신청 목록이 0인지 체크
@@ -887,173 +864,389 @@ Main() {
                             , getScreenYbyWindowPercentage('55%')
                             , '*50 ' . _imageFile_friendRequestListEmpty)
                         if (match == 1) {
-                            SendUiMsg('[안내] 잔여 신청 목록이 없습니다. 10초 후 새로고침.')
-                            g_CurrentLogic := "01"
+                            SendUiMsg("[안내] 잔여 신청 목록이 없습니다. 10초 후 새로고침.")
+                            g_CurrentLogic := "1-01"
                             failCount := 0
                             sleep(10000) ; 10초 중단
-                            InitLocation("RequestList")
+                            InitLocation('RequestList')
                         }
                         else if (match == 0) {
                             SendUiMsg("[오류] 유저 화면 진입 실패. 화면을 초기화 합니다.")
-                            g_CurrentLogic := "01"
+                            g_CurrentLogic := "1-01"
                             failCount := 0
-                            InitLocation("RequestList")
+                            InitLocation('RequestList')
                         }
                     }
-                }
 
-                ; 02. 유저 디테일 // B. 마이베스트 진입 시도
-            case "02-B":
-                global g_CaseDescription := '마이베스트 카드 검색'
-                CaseStartLog()
-                _clickSafeArea()
-                match := ImageSearch(
-                    &matchedX
-                    , &matchedY
-                    , getScreenXbyWindowPercentage('20%')
-                    , getScreenYbyWindowPercentage('5%')
-                    , getScreenXbyWindowPercentage('80%')
-                    , getScreenYbyWindowPercentage('90%')
-                    , '*100 ' . _imageFile_userDetailEmpty)
-                if (match == 1) {
-                    SendUiMsg("[오류] 마이 베스트 미설정")
-                    SendUiMsg("❌ 입국 심사 거절")
-                    _thisUserPass := FALSE
-                    _thisUserFulfilled := FALSE
-                    g_CurrentLogic := "03-B"
-                }
-                else if (match == 0) {
-                    match := ImageSearch(
-                        &matchedX
-                        , &matchedY
-                        , getScreenXbyWindowPercentage('38%')
-                        , getScreenYbyWindowPercentage('5%')
-                        , getScreenXbyWindowPercentage('62%')
-                        , getScreenYbyWindowPercentage('90%')
-                        , '*100 ' . _imageFile_userDetailMybest)
-                    if (match == 1) {
-                        targetX := (Match._matchedX - targetWindowX) + 20
-                        targetY := (Match._matchedY - targetWindowY) + 100
-                        ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        delayShort() ; // 오류 자꾸 발생해서 2중 클릭 예외 처리
-                        ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        ; _delayLong() ; // 1배속
-                        g_CurrentLogic := "03-A"
-                        failCount := 0
-                        delayLong()
-                    }
-                    else if (match == 0) {
+                    case "1-02": ; // 1-02 유저 디테일 - 예외 케이스 확인 및 마이 베스트 확인
+                        g_CaseDescription := '유저 화면 진입'
+                        LogicStartLog()
+                        ; // failcount 먼저 체크
+                        if (failCount >= 5) {
+                            SendUiMsg("[오류] 마이 베스트 진입 불가")
+                            _clickCloseModalButton()
+                            g_CurrentLogic := "1-01"
+                            failCount := 0
+                            delayShort()
+                            continue
+                        }
+                        ; // 마이 베스트 설정 1 (엠블럼 O)
+                        xy := MatchObject("UserDetailMybestButton1")
+                        if xy {
+                            Click(xy)
+                            delayShort()
+                            Click(xy)
+                            delayShort()
+                            g_CurrentLogic := '1-03'
+                            failCount := 0
+                            continue
+                        }
+                        ; // 마이 베스트 설정 2 (엠블럼 X)
+                        xy := MatchObject("UserDetailMybestButton2")
+                        if xy {
+                            Click(xy)
+                            delayShort()
+                            Click(xy)
+                            delayShort()
+                            g_CurrentLogic := '1-03'
+                            failCount := 0
+                            continue
+                        }
+                        ; // 유저가 신청 취소한 경우
+                        xy := MatchObject("UserDetailRequestFriend")
+                        if xy {
+                            SendUiMsg("[예외] 유저의 신청 취소")
+                            _clickCloseModalButton()
+                            g_CurrentLogic := "1-01"
+                            failCount := 0
+                            delayShort()
+                            continue
+                        }
+                        ; // 마이 베스트 미설정 1 (엠블럼 O)
+                        xy := MatchObject("UserDetailEmpty1")
+                        if xy {
+                            SendUiMsg("[예외] 마이 베스트 미설정")
+                            SendUiMsg("❌ 입국 거절")
+                            _clickCloseModalButton()
+                            g_CurrentLogic := "1-01"
+                            failCount := 0
+                            delayShort()
+                            continue
+                        }
+                        ; // 마이 베스트 미설정 2 (엠블럼 X)
+                        xy := MatchObject("UserDetailEmpty2")
+                        if xy {
+                            SendUiMsg("[예외] 마이 베스트 미설정")
+                            SendUiMsg("❌ 입국 거절")
+                            _clickCloseModalButton()
+                            g_CurrentLogic := "1-01"
+                            failCount := 0
+                            delayShort()
+                            continue
+                        }
                         failCount := failCount + 1
-                    }
-                    if (failCount >= 5) {
-                        SendUiMsg("[오류] 마이 베스트 진입 불가")
+                        SendUiMsg("[안내] 마이베스트 진입 재시도")
+                        delayShort()
+                        continue
+
+                        ; 1-03 입국 심사 / 여권 확인
+                    case "1-03":
+                        g_CaseDescription := '입국 심사 : 여권 확인'
+                        LogicStartLog()
+                        ; // failcount 먼저 체크
+                        if (failCount >= 5) {
+                            _thisUserPass := FALSE
+                            _thisUserFulfilled := FALSE
+                            SendUiMsg("❌ 입국 거절")
+                            _clickCloseModalButton()
+                            TryLogicTransition('1-06')
+                            continue
+                        }
+                        ; // 여권 체크
+                        xy := MatchObject('PassportPikachu')
+                        if xy {
+                            _thisUserPass := TRUE
+                            _thisUserFulfilled := FALSE
+                            SendUiMsg("✅ 입국 심사 통과")
+                            _clickCloseModalButton()
+                            TryLogicTransition('1-04')
+                            continue
+                        }
+                        else {
+                            SendUiMsg("[여권 미확인] 잠시 후 재시도 ")
+                            failCount := failCount + 1
+                            delayLong()
+                            continue
+                        }
+
+                    case "1-04":
+                        g_CaseDescription := '유저 화면 : 승인 처리'
+                        LogicStartLog()
+                        ; // failcount 먼저 체크
+                        if (failCount >= 5) {
+                            SendUiMsg("[오류] 승인 처리 불가")
+                            _clickCloseModalButton()
+                            g_CurrentLogic := "1-01"
+                            failCount := 0
+                            delayShort()
+                            continue
+                        }
+                        ; // 승인 버튼 클릭
+                        xy := MatchObject("UserDetailAccept")
+                        if xy {
+                            Click(xy)
+                            r := TryLogicTransition('1-05')
+                            if r {
+                                SendUiMsg("승인 처리 완료")
+                            }
+                            continue
+                        }
+                        else {
+                            failCount := failCount + 1
+                            continue
+                        }
+                    case "1-05":
+                        g_CaseDescription := '심사 승인 처리, 결과 확인'
+                        LogicStartLog()
+
+                        if (_thisUserPass == TRUE && _thisUserFulfilled == FALSE) {
+                            match := ImageSearch(
+                                &matchedX
+                                , &matchedY
+                                , getScreenXbyWindowPercentage('12%')
+                                , getScreenYbyWindowPercentage('70%')
+                                , getScreenXbyWindowPercentage('88%')
+                                , getScreenYbyWindowPercentage('77%')
+                                , '*50 ' . _imageFile_userDetailAccept)
+                            ; _statusMsg("[match] = " . match)
+                            if (match == 1) {
+                                targetX := xy[1] - targetWindowX + 10
+                                targetY := xy[2] - targetWindowY + 10
+                                ; _statusMsg("[클릭]`ntargetX : " . targetX . "`ntargetY : " . targetY)
+                                ControlClick('X' . targetX . ' Y' . targetY, targetWindow, , 'Left', 1, 'NA', ,)
+                                _thisUserFulfilled := TRUE
+                                delayLong() ; // 닌텐도 서버 이슈로 로딩 발생
+                            }
+                            else if (match == 0) {
+                                failCount := failCount + 1
+                                ControlClick(targetControl, targetWindow, , 'WU', 3, 'NA', ,) ;
+
+                                ; 재시도 후 failsafe, 해당 유저의 신청 포기 처리, 현재 case 정보 로그 남기기
+                                match := ImageSearch(
+                                    &matchedX,
+                                    &matchedY,
+                                    getScreenXbyWindowPercentage('12%'),
+                                    getScreenYbyWindowPercentage('70%'),
+                                    getScreenXbyWindowPercentage('88%'),
+                                    getScreenYbyWindowPercentage('77%'),
+                                    '*50 ' . _imageFile_userDetailRequestFriend)
+                                if (match == 1) {
+                                    SendUiMsg("[오류] 유저의 신청 취소")
+                                    _clickCloseModalButton()
+                                    _thisUserFulfilled := TRUE
+                                    g_CurrentLogic := "1-01"
+                                }
+                                else if (match == 0) {
+                                    delayShort()
+                                }
+                            }
+                            if (failCount >= 5) {
+                                SendUiMsg("[오류] 승인 불가")
+                                _clickCloseModalButton()
+                                g_CurrentLogic := "1-01"
+                                failCount := 0
+                                delayShort()
+                            }
+
+                        }
+                        if (_thisUserPass == FALSE && _thisUserFulfilled == FALSE) {
+                            match := ImageSearch(
+                                &matchedX
+                                , &matchedY
+                                , getScreenXbyWindowPercentage('12%')
+                                , getScreenYbyWindowPercentage('70%')
+                                , getScreenXbyWindowPercentage('88%')
+                                , getScreenYbyWindowPercentage('77%')
+                                , '*50 ' . _imageFile_userDetailDecline)
+                            if (match == 1) {
+                                targetX := xy[1] - targetWindowX
+                                targetY := xy[2] - targetWindowY
+                                ControlClick('X' . targetX . ' Y' . targetY, targetWindow, , 'Left', 1, 'NA', ,)
+                                _thisUserFulfilled := TRUE
+                            }
+                            else if (match == 0) {
+                                failCount := failCount + 1
+                                ControlClick(targetControl, targetWindow, , 'WU', 3, 'NA', ,) ;
+                            }
+                        }
+                        if (_thisUserPass == TRUE && _thisUserFulfilled == TRUE) {
+                            match := ImageSearch(
+                                &matchedX,
+                                &matchedY,
+                                getScreenXbyWindowPercentage('12%'),
+                                getScreenYbyWindowPercentage('70%'),
+                                getScreenXbyWindowPercentage('88%'),
+                                getScreenYbyWindowPercentage('77%'),
+                                '*50 ' . _imageFile_userDetailFriendNow)
+                            if (match == 1) {
+                                ControlClick('X' . getWindowXbyWindowPercentage('50%') . ' Y' .
+                                getWindowYbyWindowPercentage(
+                                    '95%'), targetWindow, , 'Left', 1, 'NA', ,)
+                                SendUiMsg("[승인 완료] 다음 신청 진행")
+                                g_CurrentLogic := "1-01"
+                            }
+                            else if (match == 0) {
+                                ; _delayXLong() ; // 유저가 입국 절차 중간에 신청 취소 시 닌텐도 서버 이슈로 긴 로딩 발생
+                                ; 딜레이를 주면 전체 사이클이 느려지는 문제 / 차라리 사이클을 한번 더 돌리는게 이득
+                                match := ImageSearch(
+                                    &matchedX
+                                    , &matchedY
+                                    , getScreenXbyWindowPercentage('25%')
+                                    , getScreenYbyWindowPercentage('43%')
+                                    , getScreenXbyWindowPercentage('75%')
+                                    , getScreenYbyWindowPercentage('52%')
+                                    , '*50 ' . _imageFile_userDetailRequestNotFound)
+                                if (match == 1) {
+                                    SendUiMsg("[오류] '신청은 발견되지 않았습니다'")
+                                    ControlClick(
+                                        'X' . getWindowXbyWindowPercentage('50%') . ' Y' . getWindowYbyWindowPercentage(
+                                            '68%')
+                                        , targetWindow, , 'Left', 1, 'NA', ,)
+                                    delayShort()
+                                    ControlClick('X' . getWindowXbyWindowPercentage('50%') . ' Y' .
+                                    getWindowYbyWindowPercentage('95%'), targetWindow, , 'Left', 1, 'NA', ,)
+                                    g_CurrentLogic := "1-01"
+                                    delayLong()
+                                }
+                                else if (match == 0) {
+                                    SendUiMsg("[안내] 수락완료 대기 중")
+                                    failCount := failCount + 1
+                                }
+                            }
+                        }
+                        if (_thisUserPass == FALSE && _thisUserFulfilled == TRUE) {
+                            match := ImageSearch(
+                                &matchedX,
+                                &matchedY,
+                                getScreenXbyWindowPercentage('12%'),
+                                getScreenYbyWindowPercentage('70%'),
+                                getScreenXbyWindowPercentage('88%'),
+                                getScreenYbyWindowPercentage('77%'),
+                                '*50 ' . _imageFile_userDetailRequestFriend)
+                            if (match == 1) {
+                                _clickCloseModalButton()
+                                SendUiMsg("[거절 완료] 다음 신청 진행")
+                                g_CurrentLogic := "1-01"
+                                delayShort()
+                            }
+                            else if (match == 0) {
+                                failCount := failCount + 1
+                            }
+                        }
+                        if (failCount >= 5) {
+                            SendUiMsg("[오류] 유저 화면 진입 실패. 화면을 초기화 합니다.")
+                            g_CurrentLogic := "1-01"
+                            failCount := 0
+                            SendInput "{esc}"
+                            InitLocation('RequestList')
+                        }
+
+                        ;; 거절 로직 시작
+                    case "D00":
+                        ;; 환경값 재설정
+                        _delayConfig := g_UserIni.Delay
+                        _instanceNameConfig := g_UserIni.InstanceName
+                        _acceptingTermConfig := g_UserIni.AcceptingTerm * 60000
+                        _deletingTermConfig := g_UserIni.BufferTerm * 60000
+
+                        SendUiMsg("🗑️ 친구 삭제 부터 시작")
+                        g_CaseDescription := '친구 삭제를 위해 메뉴 초기화'
+                        LogicStartLog()
+                        failCount := 0
                         _clickCloseModalButton()
-                        g_CurrentLogic := "01"
-                        failCount := 0
+                        delayXLong()
+                        match := ImageSearch(
+                            &matchedX
+                            , &matchedY
+                            , getScreenXbyWindowPercentage('2%')
+                            , getScreenYbyWindowPercentage('80%')
+                            , getScreenXbyWindowPercentage('24%')
+                            , getScreenYbyWindowPercentage('90%')
+                            , '*100 ' . _imageFile_friendMenuButton)
+                        if (match == 1) {
+                            ; _statusMsg("match = 1")
+                            targetX := xy[1] - targetWindowX + 10
+                            targetY := xy[2] - targetWindowY + 10
+                            ControlClick('X' . targetX . ' Y' . targetY, targetWindow, , 'Left', 1, 'NA', ,)
+                            g_CurrentLogic := "D01"
+                            delayLong()
+                        }
+                        else if (match == 0) {
+                            ; _statusMsg("match = 0")
+                        }
+
+                    case "D01":
+                        g_CaseDescription := "친구 목록 확인"
+                        LogicStartLog()
                         delayShort()
-                    }
-                }
+                        static globalRetryCount := 0 ; 무한루프 시 앱 종료를 위해
 
-                ; 03. 입국 심사 // A. 여권 확인
-            case "03-A":
-                global g_CaseDescription := '입국 심사 : 여권 확인'
-                CaseStartLog()
-                ; _delayLong() ; // 1배속
-                if (failCount < 5) {
-                    match := ImageSearch(
-                        &matchedX
-                        , &matchedY
-                        , getScreenXbyWindowPercentage('2%')
-                        , getScreenYbyWindowPercentage('83%')
-                        , getScreenXbyWindowPercentage('22%')
-                        , getScreenYbyWindowPercentage('90%')
-                        , '*50 ' . _imageFile_passportPikachu)
-                    if (match == 1) {
-                        _thisUserPass := TRUE
-                        _thisUserFulfilled := FALSE
-                        SendUiMsg("✅ 입국 심사 통과")
-                        ControlClick('X' . getWindowXbyWindowPercentage('50%') . ' Y' .
-                        getWindowYbyWindowPercentage(
-                            '95%'), targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        g_CurrentLogic := "03-B"
-                        failCount := 0
+                        match := ImageSearch(
+                            &matchedX
+                            , &matchedY
+                            , getScreenXbyWindowPercentage('56%')
+                            , getScreenYbyWindowPercentage('20%')
+                            , getScreenXbyWindowPercentage('98%')
+                            , getScreenYbyWindowPercentage('44%')
+                            , '*100 ' . _imageFile_friendListCard)
+                        if (match == 1) {
+                            globalRetryCount := 0
+                            ; _statusMsg("match = 1")
+                            targetX := xy[1] - targetWindowX
+                            targetY := xy[2] - targetWindowY
+                            ControlClick('X' . targetX . ' Y' . targetY, targetWindow, , 'Left', 1, 'NA', ,)
+                            delayShort()
+                            ControlClick('X' . targetX . ' Y' . targetY, targetWindow, , 'Left', 1, 'NA', ,)
+                            g_CurrentLogic := "D02"
+                            _thisUserDeleted := FALSE
+                            failCount := 0 ; 성공 시 초기화
+                            delayLong()
+                        }
+                        else if (match == 0) {
+                            match := ImageSearch(
+                                &matchedX
+                                , &matchedY
+                                , getScreenXbyWindowPercentage('20%')
+                                , getScreenYbyWindowPercentage('45%')
+                                , getScreenXbyWindowPercentage('80%')
+                                , getScreenYbyWindowPercentage('55%')
+                                , '*100 ' . _imageFile_friendListEmpty)
+                            if (match == 1) {
+                                SendUiMsg("[안내] 친구를 모두 삭제했습니다.")
+                                SendUiMsg("[페이즈 전환] 수락을 재개합니다.")
+                                PhaseToggler()
+                                globalRetryCount := 0 ; 성공 시 초기화
+                                g_CurrentLogic := "00"
+                            }
+                            else if (match == 0) {
+                                failCount := failCount + 1
+                            }
+                            if (failCount >= 5) {
+                                globalRetryCount := globalRetryCount + 1
+                                if (globalRetryCount > 5) {
+                                    SendUiMsg("[심각] 반복적인 화면 인식 실패. 프로그램을 종료합니다.")
+                                    ExitApp
+                                }
+                                SendUiMsg("[오류] 유저 화면 진입 실패. 화면을 초기화 합니다.")
+                                failCount := 0
+                                InitLocation('FriendList')
+                            }
+                        }
+
+                    case "D02":
+                        g_CaseDescription := "친구 화면 진입"
+                        LogicStartLog()
                         delayShort()
-                    }
-                    else if (match == 0) {
-                        SendUiMsg("[여권 인식 실패] 잠시 후 재시도 ")
-                        failCount := failCount + 1
-                        delayLong()
-                    }
-                }
-                if (failCount >= 5) {
-                    SendUiMsg("❌ 입국 심사 거절")
-                    _thisUserPass := FALSE
-                    _thisUserFulfilled := FALSE
-                    ControlClick('X' . getWindowXbyWindowPercentage('50%') . ' Y' . getWindowYbyWindowPercentage(
-                        '95%'),
-                    targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                    g_CurrentLogic := "03-B"
-                    failCount := 0
-                    delayShort()
-                }
-
-                ; 03. 입국 심사 // B. 유저 화면 재진입, 신청 처리
-            case "03-B":
-                global g_CaseDescription := '유저 화면 재진입, 신청 처리'
-                CaseStartLog()
-                match := ImageSearch(
-                    &matchedX
-                    , &matchedY
-                    , getScreenXbyWindowPercentage('38%')
-                    , getScreenYbyWindowPercentage('5%')
-                    , getScreenXbyWindowPercentage('62%')
-                    , getScreenYbyWindowPercentage('90%')
-                    , '*100 ' . _imageFile_userDetailMybest)
-                if (match == 1) {
-                    ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 3, 'NA', ,) ;
-                    delayShort()
-                    g_CurrentLogic := "03-C"
-                }
-                else if (match == 0) {
-                    ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 1, 'NA', ,)
-                    delayShort()
-                    ControlClick(targetControlHandle, targetWindowHwnd, , 'WD', 1, 'NA', ,)
-                    delayShort()
-                    failCount := failCount + 1
-                }
-                if (failCount >= 5) {
-                    SendUiMsg("[오류] 승인 화면 진입 실패. 화면을 초기화 합니다.")
-                    g_CurrentLogic := "01"
-                    InitLocation("RequestList")
-                    failCount := 0
-                }
-
-            case "03-C":
-                global g_CaseDescription := '신청 처리'
-                CaseStartLog()
-                if (_thisUserPass == TRUE && _thisUserFulfilled == FALSE) {
-                    match := ImageSearch(
-                        &matchedX
-                        , &matchedY
-                        , getScreenXbyWindowPercentage('12%')
-                        , getScreenYbyWindowPercentage('70%')
-                        , getScreenXbyWindowPercentage('88%')
-                        , getScreenYbyWindowPercentage('77%')
-                        , '*50 ' . _imageFile_userDetailAccept)
-                    ; _statusMsg("[match] = " . match)
-                    if (match == 1) {
-                        targetX := Match._matchedX - targetWindowX + 10
-                        targetY := Match._matchedY - targetWindowY + 10
-                        ; _statusMsg("[클릭]`ntargetX : " . targetX . "`ntargetY : " . targetY)
-                        ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        _thisUserFulfilled := TRUE
-                        delayLong() ; // 닌텐도 서버 이슈로 로딩 발생
-                    }
-                    else if (match == 0) {
-                        failCount := failCount + 1
-                        ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 3, 'NA', ,) ;
-
-                        ; 재시도 후 failsafe, 해당 유저의 신청 포기 처리, 현재 case 정보 로그 남기기
                         match := ImageSearch(
                             &matchedX,
                             &matchedY,
@@ -1061,602 +1254,479 @@ Main() {
                             getScreenYbyWindowPercentage('70%'),
                             getScreenXbyWindowPercentage('88%'),
                             getScreenYbyWindowPercentage('77%'),
-                            '*50 ' . _imageFile_userDetailRequestFriend)
+                            '*50 ' . _imageFile_userDetailFriendNow)
                         if (match == 1) {
-                            SendUiMsg("[오류] 유저의 신청 취소")
-                            _clickCloseModalButton()
-                            _thisUserFulfilled := TRUE
-                            g_CurrentLogic := "01"
-                        }
-                        else if (match == 0) {
-                            delayShort()
-                        }
-                    }
-                    if (failCount >= 5) {
-                        SendUiMsg("[오류] 승인 불가")
-                        _clickCloseModalButton()
-                        g_CurrentLogic := "01"
-                        failCount := 0
-                        delayShort()
-                    }
-
-                }
-                if (_thisUserPass == FALSE && _thisUserFulfilled == FALSE) {
-                    match := ImageSearch(
-                        &matchedX
-                        , &matchedY
-                        , getScreenXbyWindowPercentage('12%')
-                        , getScreenYbyWindowPercentage('70%')
-                        , getScreenXbyWindowPercentage('88%')
-                        , getScreenYbyWindowPercentage('77%')
-                        , '*50 ' . _imageFile_userDetailDecline)
-                    if (match == 1) {
-                        targetX := Match._matchedX - targetWindowX
-                        targetY := Match._matchedY - targetWindowY
-                        ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        _thisUserFulfilled := TRUE
-                    }
-                    else if (match == 0) {
-                        failCount := failCount + 1
-                        ControlClick(targetControlHandle, targetWindowHwnd, , 'WU', 3, 'NA', ,) ;
-                    }
-                }
-                if (_thisUserPass == TRUE && _thisUserFulfilled == TRUE) {
-                    match := ImageSearch(
-                        &matchedX,
-                        &matchedY,
-                        getScreenXbyWindowPercentage('12%'),
-                        getScreenYbyWindowPercentage('70%'),
-                        getScreenXbyWindowPercentage('88%'),
-                        getScreenYbyWindowPercentage('77%'),
-                        '*50 ' . _imageFile_userDetailFriendNow)
-                    if (match == 1) {
-                        ControlClick('X' . getWindowXbyWindowPercentage('50%') . ' Y' .
-                        getWindowYbyWindowPercentage(
-                            '95%'), targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        SendUiMsg("[승인 완료] 다음 신청 진행")
-                        g_CurrentLogic := "01"
-                    }
-                    else if (match == 0) {
-                        ; _delayXLong() ; // 유저가 입국 절차 중간에 신청 취소 시 닌텐도 서버 이슈로 긴 로딩 발생
-                        ; 딜레이를 주면 전체 사이클이 느려지는 문제 / 차라리 사이클을 한번 더 돌리는게 이득
-                        match := ImageSearch(
-                            &matchedX
-                            , &matchedY
-                            , getScreenXbyWindowPercentage('25%')
-                            , getScreenYbyWindowPercentage('43%')
-                            , getScreenXbyWindowPercentage('75%')
-                            , getScreenYbyWindowPercentage('52%')
-                            , '*50 ' . _imageFile_userDetailRequestNotFound)
-                        if (match == 1) {
-                            SendUiMsg("[오류] '신청은 발견되지 않았습니다'")
-                            ControlClick(
-                                'X' . getWindowXbyWindowPercentage('50%') . ' Y' . getWindowYbyWindowPercentage(
-                                    '68%')
-                                , targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                            delayShort()
-                            ControlClick('X' . getWindowXbyWindowPercentage('50%') . ' Y' .
-                            getWindowYbyWindowPercentage('95%'), targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                            g_CurrentLogic := "01"
+                            ; _statusMsg("match = 1")
+                            targetX := xy[1] - targetWindowX + 5
+                            targetY := xy[2] - targetWindowY + 5
+                            ControlClick('X' . targetX . ' Y' . targetY, targetWindow, , 'Left', 1, 'NA', ,)
+                            g_CurrentLogic := "D03"
                             delayLong()
                         }
                         else if (match == 0) {
-                            SendUiMsg("[안내] 수락완료 대기 중")
                             failCount := failCount + 1
                         }
-                    }
-                }
-                if (_thisUserPass == FALSE && _thisUserFulfilled == TRUE) {
-                    match := ImageSearch(
-                        &matchedX,
-                        &matchedY,
-                        getScreenXbyWindowPercentage('12%'),
-                        getScreenYbyWindowPercentage('70%'),
-                        getScreenXbyWindowPercentage('88%'),
-                        getScreenYbyWindowPercentage('77%'),
-                        '*50 ' . _imageFile_userDetailRequestFriend)
-                    if (match == 1) {
-                        _clickCloseModalButton()
-                        SendUiMsg("[거절 완료] 다음 신청 진행")
-                        g_CurrentLogic := "01"
-                        delayShort()
-                    }
-                    else if (match == 0) {
-                        failCount := failCount + 1
-                    }
-                }
-                if (failCount >= 5) {
-                    SendUiMsg("[오류] 유저 화면 진입 실패. 화면을 초기화 합니다.")
-                    g_CurrentLogic := "01"
-                    failCount := 0
-                    SendInput "{esc}"
-                    InitLocation("RequestList")
-                }
-
-                ;; 거절 로직 시작
-            case "D00":
-                ;; 환경값 재설정
-                _delayConfig := g_UserIni.Delay
-                _instanceNameConfig := g_UserIni.InstanceName
-                _acceptingTermConfig := g_UserIni.AcceptingTerm * 60000
-                _deletingTermConfig := g_UserIni.BufferTerm * 60000
-
-                SendUiMsg("🗑️ 친구 삭제 부터 시작")
-                global g_CaseDescription := '친구 삭제를 위해 메뉴 초기화'
-                CaseStartLog()
-                failCount := 0
-                _clickCloseModalButton()
-                delayXLong()
-                match := ImageSearch(
-                    &matchedX
-                    , &matchedY
-                    , getScreenXbyWindowPercentage('2%')
-                    , getScreenYbyWindowPercentage('80%')
-                    , getScreenXbyWindowPercentage('24%')
-                    , getScreenYbyWindowPercentage('90%')
-                    , '*100 ' . _imageFile_friendMenuButton)
-                if (match == 1) {
-                    ; _statusMsg("match = 1")
-                    targetX := Match._matchedX - targetWindowX + 10
-                    targetY := Match._matchedY - targetWindowY + 10
-                    ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                    g_CurrentLogic := "D01"
-                    delayLong()
-                }
-                else if (match == 0) {
-                    ; _statusMsg("match = 0")
-                }
-
-            case "D01":
-                global g_CaseDescription := "친구 목록 확인"
-                CaseStartLog()
-                delayShort()
-                static globalRetryCount := 0 ; 무한루프 시 앱 종료를 위해
-
-                match := ImageSearch(
-                    &matchedX
-                    , &matchedY
-                    , getScreenXbyWindowPercentage('56%')
-                    , getScreenYbyWindowPercentage('20%')
-                    , getScreenXbyWindowPercentage('98%')
-                    , getScreenYbyWindowPercentage('44%')
-                    , '*100 ' . _imageFile_friendListCard)
-                if (match == 1) {
-                    globalRetryCount := 0
-                    ; _statusMsg("match = 1")
-                    targetX := Match._matchedX - targetWindowX
-                    targetY := Match._matchedY - targetWindowY
-                    ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                    delayShort()
-                    ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                    g_CurrentLogic := "D02"
-                    _thisUserDeleted := FALSE
-                    failCount := 0 ; 성공 시 초기화
-                    delayLong()
-                }
-                else if (match == 0) {
-                    match := ImageSearch(
-                        &matchedX
-                        , &matchedY
-                        , getScreenXbyWindowPercentage('20%')
-                        , getScreenYbyWindowPercentage('45%')
-                        , getScreenXbyWindowPercentage('80%')
-                        , getScreenYbyWindowPercentage('55%')
-                        , '*100 ' . _imageFile_friendListEmpty)
-                    if (match == 1) {
-                        SendUiMsg("[안내] 친구를 모두 삭제했습니다.")
-                        SendUiMsg("[페이즈 전환] 수락을 재개합니다.")
-                        PhaseToggler()
-                        globalRetryCount := 0 ; 성공 시 초기화
-                        g_CurrentLogic := "00"
-                    }
-                    else if (match == 0) {
-                        failCount := failCount + 1
-                    }
-                    if (failCount >= 5) {
-                        globalRetryCount := globalRetryCount + 1
-                        if (globalRetryCount > 5) {
-                            SendUiMsg("[심각] 반복적인 화면 인식 실패. 프로그램을 종료합니다.")
-                            ExitApp
+                        if (failCount >= 5) {
+                            SendUiMsg("[오류] 친구 삭제 호출 실패. 화면을 초기화 합니다.")
+                            g_CurrentLogic := "D01"
+                            failCount := 0
+                            InitLocation('FriendList')
                         }
-                        SendUiMsg("[오류] 유저 화면 진입 실패. 화면을 초기화 합니다.")
-                        failCount := 0
-                        InitLocation('FriendList')
-                    }
-                }
 
-            case "D02":
-                global g_CaseDescription := "친구 화면 진입"
-                CaseStartLog()
-                delayShort()
-                match := ImageSearch(
-                    &matchedX,
-                    &matchedY,
-                    getScreenXbyWindowPercentage('12%'),
-                    getScreenYbyWindowPercentage('70%'),
-                    getScreenXbyWindowPercentage('88%'),
-                    getScreenYbyWindowPercentage('77%'),
-                    '*50 ' . _imageFile_userDetailFriendNow)
-                if (match == 1) {
-                    ; _statusMsg("match = 1")
-                    targetX := Match._matchedX - targetWindowX + 5
-                    targetY := Match._matchedY - targetWindowY + 5
-                    ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                    g_CurrentLogic := "D03"
-                    delayLong()
-                }
-                else if (match == 0) {
-                    failCount := failCount + 1
-                }
-                if (failCount >= 5) {
-                    SendUiMsg("[오류] 친구 삭제 호출 실패. 화면을 초기화 합니다.")
-                    g_CurrentLogic := "D01"
-                    failCount := 0
-                    InitLocation("FriendList")
-                }
+                    case "D03":
+                        g_CaseDescription := "친구 삭제 진행"
+                        LogicStartLog()
+                        if (_thisUserDeleted == FALSE) {
+                            match := ImageSearch(
+                                &matchedX,
+                                &matchedY,
+                                getScreenXbyWindowPercentage('50%'),
+                                getScreenYbyWindowPercentage('62%'),
+                                getScreenXbyWindowPercentage('98%'),
+                                getScreenYbyWindowPercentage('74%'),
+                                '*50 ' . _imageFile_removeFriendConfirm)
+                            if (match == 1) {
+                                ; _statusMsg("match = 1")
+                                targetX := xy[1] - targetWindowX + 50
+                                targetY := xy[2] - targetWindowY + 20
+                                ControlClick('X' . targetX . ' Y' . targetY, targetWindow, , 'Left', 1, 'NA', ,)
+                                _thisUserDeleted := TRUE
+                                ; _statusMsg("[친구 삭제 완료]")
+                                delayLong()
+                            }
+                            else if (match == 0) {
+                                failCount := failCount + 1
+                            }
+                            if (failCount >= 5) {
+                                SendUiMsg("[오류] 친구 삭제 호출 실패. 화면을 초기화 합니다.")
+                                g_CurrentLogic := "D01"
+                                failCount := 0
+                                SendInput "{esc}"
+                                InitLocation('FriendList')
+                            }
+                        }
+                        else if (_thisUserDeleted == TRUE) {
+                            ; _statusMsg("[매치 시도] "
+                            ; . getScreenXbyWindowPercentage('12%')
+                            ; . " " . getScreenYbyWindowPercentage('70%')
+                            ; . " " . getScreenXbyWindowPercentage('88%')
+                            ; . " " . getScreenYbyWindowPercentage('77%'))
+                            delayShort()
+                            match := ImageSearch(
+                                &matchedX,
+                                &matchedY,
+                                getScreenXbyWindowPercentage('12%'),
+                                getScreenYbyWindowPercentage('70%'),
+                                getScreenXbyWindowPercentage('88%'),
+                                getScreenYbyWindowPercentage('77%'),
+                                '*50 ' . _imageFile_userDetailRequestFriend)
+                            if (match == 1) {
+                                _clickCloseModalButton()
+                                g_CurrentLogic := "D01"
+                                delayLong()
+                            }
+                            else if (match == 0) {
+                                failCount := failCount + 1
+                            }
+                            if (failCount >= 5) {
+                                SendUiMsg("[오류] 화면 전환 실패. 화면을 초기화 합니다.")
+                                g_CurrentLogic := "D01"
+                                failCount := 0
+                                SendInput "{esc}"
+                                InitLocation('FriendList')
+                            }
+                        }
 
-            case "D03":
-                global g_CaseDescription := "친구 삭제 진행"
-                CaseStartLog()
-                if (_thisUserDeleted == FALSE) {
-                    match := ImageSearch(
-                        &matchedX,
-                        &matchedY,
-                        getScreenXbyWindowPercentage('50%'),
-                        getScreenYbyWindowPercentage('62%'),
-                        getScreenXbyWindowPercentage('98%'),
-                        getScreenYbyWindowPercentage('74%'),
-                        '*50 ' . _imageFile_removeFriendConfirm)
-                    if (match == 1) {
-                        ; _statusMsg("match = 1")
-                        targetX := Match._matchedX - targetWindowX + 50
-                        targetY := Match._matchedY - targetWindowY + 20
-                        ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                        _thisUserDeleted := TRUE
-                        ; _statusMsg("[친구 삭제 완료]")
-                        delayLong()
-                    }
-                    else if (match == 0) {
-                        failCount := failCount + 1
-                    }
-                    if (failCount >= 5) {
-                        SendUiMsg("[오류] 친구 삭제 호출 실패. 화면을 초기화 합니다.")
-                        g_CurrentLogic := "D01"
-                        failCount := 0
-                        SendInput "{esc}"
-                        InitLocation("FriendList")
-                    }
                 }
-                else if (_thisUserDeleted == TRUE) {
-                    ; _statusMsg("[매치 시도] "
-                    ; . getScreenXbyWindowPercentage('12%')
-                    ; . " " . getScreenYbyWindowPercentage('70%')
-                    ; . " " . getScreenXbyWindowPercentage('88%')
-                    ; . " " . getScreenYbyWindowPercentage('77%'))
+        }
+    }
+
+    ; // Current 확인 로직 추가
+    ; // Current에 따라 초기 화면으로 돌아가는 로직 추가
+    ; // 이전 단계로 넘어가기 전에 현재 화면 체크 로직 필요 / 체크 완료 후 Current 변경 / 전체적으로 화면 변경 시점의 전환 로직 살펴보기
+    ; // control 클릭 함수 정리 필요 -->> tryClick
+    ; // 주요 버튼 클릭 함수화 ? 가능한지
+
+    ;; 함수 정의
+    ; getScreenXbyWindowPercentage() 정의
+    ; 1) nn%와 같은 상대값을 입력 받고
+    ; 2) 타겟 윈도우의 창 크기를 기준으로 절대값으로 변환
+    ; 3) 스크린 기준 좌표로 반환
+    getScreenXbyWindowPercentage(somePercentage) {
+        if targetWindowWidth = false {
+            MsgBox "타겟 윈도우가 설정되지 않았습니다."
+            return
+        }
+        replacedPercentage := StrReplace(somePercentage, "%")
+        if IsNumber(replacedPercentage) = false {
+            MsgBox "올바른 퍼센티지 값이 입력되지 않았습니다."
+            return
+        }
+        return Round(targetWindowX + (targetWindowWidth * (replacedPercentage / 100)), -1)
+    }
+
+    ; getScreenYbyWindowPercentage() 정의
+    ; "이미지 서치 시에만" 사용 // 퍼센티지 상대값을 스크린 기준 절대값으로 변환
+    getScreenYbyWindowPercentage(somePercentage) {
+        if targetWindowHeight = false {
+            MsgBox "타겟 윈도우가 설정되지 않았습니다."
+            return
+        }
+        replacedPercentage := StrReplace(somePercentage, "%")
+        if IsNumber(replacedPercentage) = false {
+            MsgBox "올바른 퍼센티지 값이 입력되지 않았습니다."
+            return
+        }
+        return Round(targetWindowY + (targetWindowHeight * (replacedPercentage / 100)), -1)
+    }
+
+    ; getWindowXbyWindowPercentage() 정의
+    ; 클릭 등 창 내부 상호작용에 사용 // 퍼센티지 상대값을 창 기준 절대값으로 변환
+    getWindowXbyWindowPercentage(somePercentage) {
+        if targetWindowWidth == false {
+            MsgBox "타겟 윈도우가 설정되지 않았습니다."
+            return
+        }
+        replacedPercentage := StrReplace(somePercentage, "%")
+        if IsNumber(replacedPercentage) == false {
+            MsgBox "올바른 퍼센티지 값이 입력되지 않았습니다."
+            return
+        }
+        return Round((targetWindowWidth * (replacedPercentage / 100)), -1)
+    }
+
+    getWindowYbyWindowPercentage(somePercentage) {
+        if targetWindowHeight == false {
+            MsgBox "타겟 윈도우가 설정되지 않았습니다."
+            return
+        }
+
+        replacedPercentage := StrReplace(somePercentage, "%")
+        if IsNumber(replacedPercentage) == false {
+            MsgBox "올바른 퍼센티지 값이 입력되지 않았습니다."
+            return
+        }
+        return Round((targetWindowHeight * (replacedPercentage / 100)), -1)
+    }
+
+    getWindowXbyDecimal(someDecimal) {
+        if NOT targetControlHeight {
+            MsgBox "타겟 윈도우가 설정되지 않았습니다."
+            return
+        }
+        if NOT IsNumber(someDecimal) {
+            MsgBox "올바른 소수 값이 입력되지 않았습니다."
+            return
+        }
+        return Round((targetWindowWidth * someDecimal), -1)
+    }
+
+    getWindowYbyDecimal(someDecimal) {
+        if NOT targetControlHeight {
+            MsgBox "타겟 윈도우가 설정되지 않았습니다."
+            return
+        }
+        if NOT IsNumber(someDecimal) {
+            MsgBox "올바른 소수 값이 입력되지 않았습니다."
+            return
+        }
+        return Round((targetWindowHeight * someDecimal / 100), -1)
+    }
+
+    getControlXbyDecimal(someDecimal) {
+        if NOT targetControlHeight {
+            MsgBox "타겟 윈도우가 설정되지 않았습니다."
+            return
+        }
+        if NOT IsNumber(someDecimal) {
+            MsgBox "올바른 소수 값이 입력되지 않았습니다."
+            return
+        }
+        return Round(targetControlWidth * someDecimal, -1)
+    }
+
+    getControlYbyDecimal(someDecimal) {
+        if NOT targetControlHeight {
+            MsgBox "타겟 컨트롤이 설정되지 않았습니다."
+            return
+        }
+        if NOT IsNumber(someDecimal) {
+            MsgBox "올바른 소수 값이 입력되지 않았습니다."
+            return
+        }
+        return Round(targetControlHeight * someDecimal, -1)
+    }
+
+    delayShort() {
+        Sleep(_delayConfig)
+    }
+
+    delayLong() {
+        Sleep(_delayConfig * 3)
+    }
+
+    delayXLong() {
+        Sleep(_delayConfig * 10)
+    }
+
+    delayLoad() {
+        Sleep(2000)
+    }
+
+    ; 모달 x 버튼 클릭
+    _clickCloseModalButton() {
+        ControlClick(
+            'X' . getWindowXbyWindowPercentage('50%') . ' Y' . getWindowYbyWindowPercentage('95%')
+            , targetWindow, , 'Left', 1, 'NA', ,)
+    }
+
+    _clickSafeArea() {
+        ControlClick(
+            'X' . getWindowXbyWindowPercentage('98%') . ' Y' . getWindowYbyWindowPercentage('50%')
+            , targetWindow, , 'Left', 2, 'NA', ,)
+    }
+
+    _getElapsedTime() {
+        global _nowAccepting
+        global _recentTick, _currentTick
+
+        _currentTick := A_TickCount
+        elapsedTime := _currentTick - _recentTick
+        SendUiMsg("[안내] 현재 페이즈 경과 시간 - " . MillisecToTime(elapsedTime))
+        return elapsedTime
+    }
+
+    PhaseToggler(elapsedTime := 0) {
+        global _nowAccepting
+        global _recentTick, _currentTick
+        global _acceptingTermConfig
+
+        if (_nowAccepting == TRUE
+            && elapsedTime > _acceptingTermConfig) {
+            _nowAccepting := FALSE
+            _recentTick := A_TickCount
+            SendUiMsg("[페이즈 변경] 친구 삭제 페이즈로 변경")
+            SendUiMsg("[안내] 현재 페이즈 경과 시간 - " . MillisecToTime(elapsedTime))
+        }
+        else if (_nowAccepting == FALSE) {
+            _nowAccepting := TRUE
+            _recentTick := A_TickCount
+            SendUiMsg("[페이즈 변경]  친구 수락 페이즈로 변경")
+            SendUiMsg("[안내] 현재 페이즈 경과 시간 - " . MillisecToTime(elapsedTime))
+        }
+    }
+
+    ; 목적지로 화면 초기화 : Destination => RequestList / FriendList
+    InitLocation(Destination := "RequestList") {
+        r := 0
+        while r < 10 {
+            xy := MatchObject("FriendsMenuButton")
+            if xy {
+                ClickObject('FriendsMenuButton')
+                delayXLong()
+                if (Destination == "RequestList") {
+                    ClickObject('FriendRequestMenuButton')
                     delayShort()
-                    match := ImageSearch(
-                        &matchedX,
-                        &matchedY,
-                        getScreenXbyWindowPercentage('12%'),
-                        getScreenYbyWindowPercentage('70%'),
-                        getScreenXbyWindowPercentage('88%'),
-                        getScreenYbyWindowPercentage('77%'),
-                        '*50 ' . _imageFile_userDetailRequestFriend)
-                    if (match == 1) {
-                        _clickCloseModalButton()
-                        g_CurrentLogic := "D01"
-                        delayLong()
-                    }
-                    else if (match == 0) {
-                        failCount := failCount + 1
-                    }
-                    if (failCount >= 5) {
-                        SendUiMsg("[오류] 화면 전환 실패. 화면을 초기화 합니다.")
-                        g_CurrentLogic := "D01"
-                        failCount := 0
-                        SendInput "{esc}"
-                        InitLocation("FriendList")
-                    }
+                    return
                 }
-
-        }
-    }
-}
-
-; // Current 확인 로직 추가
-; // Current에 따라 초기 화면으로 돌아가는 로직 추가
-; // 이전 단계로 넘어가기 전에 현재 화면 체크 로직 필요 / 체크 완료 후 Current 변경 / 전체적으로 화면 변경 시점의 전환 로직 살펴보기
-; // control 클릭 함수 정리 필요 -->> tryClick
-; // 주요 버튼 클릭 함수화 ? 가능한지
-
-;; 함수 정의
-; getScreenXbyWindowPercentage() 정의
-; 1) nn%와 같은 상대값을 입력 받고
-; 2) 타겟 윈도우의 창 크기를 기준으로 절대값으로 변환
-; 3) 스크린 기준 좌표로 반환
-getScreenXbyWindowPercentage(somePercentage) {
-    if targetWindowWidth = false {
-        MsgBox "타겟 윈도우가 설정되지 않았습니다."
-        return
-    }
-    replacedPercentage := StrReplace(somePercentage, "%")
-    if IsNumber(replacedPercentage) = false {
-        MsgBox "올바른 퍼센티지 값이 입력되지 않았습니다."
-        return
-    }
-    return Round(targetWindowX + (targetWindowWidth * replacedPercentage / 100), -1)
-}
-
-; getScreenYbyWindowPercentage() 정의
-; "이미지 서치 시에만" 사용 // 퍼센티지 상대값을 스크린 기준 절대값으로 변환
-getScreenYbyWindowPercentage(somePercentage) {
-    if targetWindowHeight = false {
-        MsgBox "타겟 윈도우가 설정되지 않았습니다."
-        return
-    }
-    replacedPercentage := StrReplace(somePercentage, "%")
-    if IsNumber(replacedPercentage) = false {
-        MsgBox "올바른 퍼센티지 값이 입력되지 않았습니다."
-        return
-    }
-    return Round(targetWindowY + (targetWindowHeight * replacedPercentage / 100), -1)
-}
-
-; getWindowXbyWindowPercentage() 정의
-; 클릭 등 창 내부 상호작용에 사용 // 퍼센티지 상대값을 창 기준 절대값으로 변환
-getWindowXbyWindowPercentage(somePercentage) {
-    if targetWindowWidth = false {
-        MsgBox "타겟 윈도우가 설정되지 않았습니다."
-        return
-    }
-    replacedPercentage := StrReplace(somePercentage, "%")
-    if IsNumber(replacedPercentage) = false {
-        MsgBox "올바른 퍼센티지 값이 입력되지 않았습니다."
-        return
-    }
-    return Round((targetWindowWidth * replacedPercentage / 100), -1)
-}
-
-getWindowYbyWindowPercentage(somePercentage) {
-    if targetWindowHeight = false {
-        MsgBox "타겟 윈도우가 설정되지 않았습니다."
-        return
-    }
-
-    replacedPercentage := StrReplace(somePercentage, "%")
-    if IsNumber(replacedPercentage) = false {
-        MsgBox "올바른 퍼센티지 값이 입력되지 않았습니다."
-        return
-    }
-    return Round((targetWindowHeight * replacedPercentage / 100), -1)
-
-}
-
-delayShort() {
-    Sleep(_delayConfig)
-}
-
-delayLong() {
-    Sleep(_delayConfig * 3)
-}
-
-delayXLong() {
-    Sleep(_delayConfig * 10)
-}
-
-delayLoad() {
-    Sleep(2000)
-}
-
-; 모달 x 버튼 클릭
-_clickCloseModalButton() {
-    ControlClick(
-        'X' . getWindowXbyWindowPercentage('50%') . ' Y' . getWindowYbyWindowPercentage('95%')
-        , targetWindowHwnd, , 'Left', 1, 'NA', ,)
-}
-
-_clickSafeArea() {
-    ControlClick(
-        'X' . getWindowXbyWindowPercentage('98%') . ' Y' . getWindowYbyWindowPercentage('50%')
-        , targetWindowHwnd, , 'Left', 2, 'NA', ,)
-}
-
-_getElapsedTime() {
-    global _nowAccepting
-    global _recentTick, _currentTick
-
-    _currentTick := A_TickCount
-    elapsedTime := _currentTick - _recentTick
-    SendUiMsg("[안내] 현재 페이즈 경과 시간 - " . MillisecToTime(elapsedTime))
-    return elapsedTime
-}
-
-PhaseToggler(elapsedTime := 0) {
-    global _nowAccepting
-    global _recentTick, _currentTick
-    global _acceptingTermConfig
-
-    if (_nowAccepting == TRUE
-        && elapsedTime > _acceptingTermConfig) {
-        _nowAccepting := FALSE
-        _recentTick := A_TickCount
-        SendUiMsg("[페이즈 변경] 친구 삭제 페이즈로 변경")
-        SendUiMsg("[안내] 현재 페이즈 경과 시간 - " . MillisecToTime(elapsedTime))
-    }
-    else if (_nowAccepting == FALSE) {
-        _nowAccepting := TRUE
-        _recentTick := A_TickCount
-        SendUiMsg("[페이즈 변경]  친구 수락 페이즈로 변경")
-        SendUiMsg("[안내] 현재 페이즈 경과 시간 - " . MillisecToTime(elapsedTime))
-    }
-}
-
-InitLocation(Destination := "RequestList") {
-    failCount := 0
-    while failCount < 10 {
-        r := Match.MatchImage("FriendsMenuButton")
-        if (r == 1) {
-            MsgBox("1499::" r)
-            MsgBox("1500::" Match._matchedX)
-            MsgBox("1501::" Match._matchedY)
-            targetX := Match._matchedX - targetWindowX + 10
-            targetY := Match._matchedY - targetWindowY + 10
-            ControlClick('X' . targetX . ' Y' . targetY, targetWindowHwnd, , 'Left', 1, 'NA', ,)
-            delayXLong()
-            if (Destination == "RequestList") {
-                ControlClick('X' . getWindowXbyWindowPercentage('80%') . ' Y' . getWindowYbyWindowPercentage('86%'),
-                targetWindowHwnd, , 'Left', 1, 'NA', ,)
-                delayShort()
-                return
+                else if (Destination == "FriendList") {
+                    return
+                }
             }
-            else if (Destination == "FriendList") {
-                return
+            else {
+                r := r + 1
+                _clickCloseModalButton()
+                delayLong()
             }
         }
-        else if match == 0 {
-            failCount := failCount + 1
-            _clickCloseModalButton()
-            delayLong()
+        if (r >= 10) {
+            SendUiMsg("[오류] 화면을 초기화할 수 없습니다.")
+            return
         }
     }
-    if (failCount >= 10) {
-        SendUiMsg("[오류] 화면을 초기화할 수 없습니다.")
-        return
-    }
-}
 
-MillisecToTime(msec) {
-    secs := Floor(Mod(msec / 1000, 60))
-    mins := Floor(Mod(msec / (1000 * 60), 60))
-    hour := Floor(Mod(msec / (1000 * 60 * 60), 24))
-    days := Floor(msec / (1000 * 60 * 60 * 24))
-    return Format("{}분 {:2}초", mins, secs)
-}
-
-; 디버그 메시지 표시
-SendDebugMsg(Message) {
-    global recentText, oldTexts, RecentTextCtrl, OldTextCtrl
-    _logRecord(Message)
-    if (recentText == "") {
-    }
-    else {
-        oldTexts := recentText . (oldTexts ? "`n" . oldTexts : "")
-        OldTextCtrl.Text := oldTexts
-    }
-    if (StrLen(oldTexts) > 2000) {
-        oldTexts := ""
+    MillisecToTime(msec) {
+        secs := Floor(Mod(msec / 1000, 60))
+        mins := Floor(Mod(msec / (1000 * 60), 60))
+        hour := Floor(Mod(msec / (1000 * 60 * 60), 24))
+        days := Floor(msec / (1000 * 60 * 60 * 24))
+        return Format("{}분 {:2}초", mins, secs)
     }
 
-    recentText := Message
-    RecentTextCtrl.Text := recentText
-    if (_debug == TRUE) {
-        statusGUI.Show("NA")
-    }
-}
-
-; ui 로그 창에 메시지 표시 & 기록
-SendUiMsg(Message) {
-    global messageQueue
-    messageQueue.Push(Message)
-
-    i := InStr(wv.Source, "/", , -1)
-    w := SubStr(wv.source, i + 1)
-
-    if (w == "index.html") {
-        _messageQueueHandler()
-    }
-    else {
-        SetTimer(_messageQueueHandler, 100)
-    }
-}
-
-_messageQueueHandler() {
-    global messageQueue
-
-    for Message in messageQueue {
-        wv.ExecuteScriptAsync("addLog('" Message "')")
-        wv.ExecuteScriptAsync("adjustTextAreaHeight()")
-        messageQueue.RemoveAt(1)
+    ; 디버그 메시지 표시
+    SendDebugMsg(Message) {
+        global recentText, oldTexts, RecentTextCtrl, OldTextCtrl
         _logRecord(Message)
+        if (recentText == "") {
+        }
+        else {
+            oldTexts := recentText . (oldTexts ? "`n" . oldTexts : "")
+            OldTextCtrl.Text := oldTexts
+        }
+        if (StrLen(oldTexts) > 2000) {
+            oldTexts := ""
+        }
+
+        recentText := Message
+        RecentTextCtrl.Text := recentText
+        if (_debug == TRUE) {
+            statusGUI.Show("NA")
+        }
     }
-    SetTimer(, 0)
-}
 
-_logRecord(text) {
-    global logfile
-    FileAppend "[" . A_YYYY . "-" . A_MM . "-" . A_DD . " " . A_Hour . ":" . A_Min . ":" . A_Sec . "] " . text .
-        "`n",
-        logfile, "UTF-8"
-}
+    ; ui 로그 창에 메시지 표시 & 기록
+    SendUiMsg(Message) {
+        global messageQueue
+        messageQueue.Push(Message)
 
-ToggleRunUiMode() {
-    wv.ExecuteScriptAsync("SwitchUIMode('" g_IsRunning "')")
-    return
-}
+        i := InStr(wv.Source, "/", , -1)
+        w := SubStr(wv.source, i + 1)
 
-ToggleRunMode() {
-    global g_IsRunning
-    g_IsRunning := NOT g_IsRunning
-    wv.ExecuteScriptAsync("SwitchUIMode('" g_IsRunning "')")
-    return
-}
+        if (w == "index.html") {
+            _messageQueueHandler()
+        }
+        else {
+            SetTimer(_messageQueueHandler, 100)
+        }
+    }
 
-StartRun(startLogic) {
-    global g_IsRunning
-    global g_CurrentLogic
+    _messageQueueHandler() {
+        global messageQueue
 
-    g_IsRunning := TRUE
-    g_CurrentLogic := startLogic
+        for Message in messageQueue {
+            wv.ExecuteScriptAsync("addLog('" Message "')")
+            wv.ExecuteScriptAsync("adjustTextAreaHeight()")
+            messageQueue.RemoveAt(1)
+            _logRecord(Message)
+        }
+        SetTimer(_messageQueueHandler, 0)
+    }
 
-    wv.ExecuteScriptAsync("SwitchUIMode('" TRUE "')")
-    SetTimer(() => Main(), -1)
-    return
-}
+    _logRecord(text) {
+        global logfile
+        FileAppend "[" . A_YYYY . "-" . A_MM . "-" . A_DD . " " . A_Hour . ":" . A_Min . ":" . A_Sec . "] " . text .
+            "`n",
+            logfile, "UTF-8"
+    }
 
-FinishRun() {
-    global g_IsRunning
-    g_IsRunning := FALSE
-    wv.ExecuteScriptAsync("SwitchUIMode('" FALSE "')")
-    ; SendUiMsg("⏹️ 동작을 중지합니다.")
-}
+    ToggleRunUiMode() {
+        wv.ExecuteScriptAsync("SwitchUIMode('" g_IsRunning "')")
+        return
+    }
 
-TogglePauseMode() {
-    global _isPausing
-    _isPausing := NOT _isPausing
-    wv.ExecuteScriptAsync("SwitchPauseMode('" _isPausing "')")
-    return
-}
+    ToggleRunMode() {
+        global g_IsRunning
+        g_IsRunning := NOT g_IsRunning
+        wv.ExecuteScriptAsync("SwitchUIMode('" g_IsRunning "')")
+        return
+    }
 
-ReadUserIni() {
-    obj := {}
-    obj.InstanceName := IniRead("Settings.ini", "UserSettings", "InstanceName")
-    obj.Delay := IniRead("Settings.ini", "UserSettings", "Delay")
-    obj.AcceptingTerm := IniRead("Settings.ini", "UserSettings", "AcceptingTerm")
-    obj.BufferTerm := IniRead("Settings.ini", "UserSettings", "BufferTerm")
-    obj.DisplayResolution := IniRead("Settings.ini", "UserSettings", "DisplayResolution")
-    return obj
-}
+    StartRun(startLogic) {
+        global g_IsRunning
+        global g_CurrentLogic
 
-UpdateUserIni(obj) {
-    IniWrite obj.InstanceName, "Settings.ini", "UserSettings", "InstanceName"
-    IniWrite obj.Delay, "Settings.ini", "UserSettings", "Delay"
-    IniWrite obj.AcceptingTerm, "Settings.ini", "UserSettings", "AcceptingTerm"
-    IniWrite obj.BufferTerm, "Settings.ini", "UserSettings", "BufferTerm"
-    IniWrite obj.DisplayResolution, "Settings.ini", "UserSettings", "DisplayResolution"
-}
+        g_IsRunning := TRUE
+        g_CurrentLogic := startLogic
 
-MatchImage(PredefinedItem) {
-    ImageSearch(
-        &matchedX
-        , &matchedY
-        , getScreenXbyWindowPercentage('60%')
-        , getScreenYbyWindowPercentage('5%')
-        , getScreenXbyWindowPercentage('99%')
-        , getScreenYbyWindowPercentage('75%')
-        , '*50 ' . _imageFile_friendRequestListCard)
-}
+        wv.ExecuteScriptAsync("SwitchUIMode('" TRUE "')")
+        SetTimer(() => Main(), -1)
+        return
+    }
 
-CaseStartLog() {
-    MsgBox(g_CurrentLogic " / " g_CaseDescription)
-    SendUiMsg("[Current] " . g_CurrentLogic . " : " . g_CaseDescription)
-}
+    FinishRun() {
+        global g_IsRunning
+        g_IsRunning := FALSE
+        wv.ExecuteScriptAsync("SwitchUIMode('" FALSE "')")
+        ; SendUiMsg("⏹️ 동작을 중지합니다.")
+    }
+
+    TogglePauseMode() {
+        global _isPausing
+        _isPausing := NOT _isPausing
+        wv.ExecuteScriptAsync("SwitchPauseMode('" _isPausing "')")
+        return
+    }
+
+    ReadUserIni() {
+        obj := {}
+        obj.InstanceName := IniRead("Settings.ini", "UserSettings", "InstanceName")
+        obj.Delay := IniRead("Settings.ini", "UserSettings", "Delay")
+        obj.AcceptingTerm := IniRead("Settings.ini", "UserSettings", "AcceptingTerm")
+        obj.BufferTerm := IniRead("Settings.ini", "UserSettings", "BufferTerm")
+        obj.DisplayResolution := IniRead("Settings.ini", "UserSettings", "DisplayResolution")
+        return obj
+    }
+
+    UpdateUserIni(obj) {
+        IniWrite obj.InstanceName, "Settings.ini", "UserSettings", "InstanceName"
+        IniWrite obj.Delay, "Settings.ini", "UserSettings", "Delay"
+        IniWrite obj.AcceptingTerm, "Settings.ini", "UserSettings", "AcceptingTerm"
+        IniWrite obj.BufferTerm, "Settings.ini", "UserSettings", "BufferTerm"
+        IniWrite obj.DisplayResolution, "Settings.ini", "UserSettings", "DisplayResolution"
+    }
+
+    MatchObject(itemKey) {
+        _predefinedItem := MatchLibrary[itemKey]
+        capture := ImagePutBuffer({ window: targetWindow })
+        needle := ImagePutBuffer({ file: _predefinedItem.matchImage[g_CurrentResolution] })
+        if (xy := capture.ImageSearch(needle)) { ; // 스크린 기준 좌표 반환
+            SendDebugMsg("[MatchImage] 이미지 매치 성공 : " _predefinedItem.name " / " xy[1] ", " xy[2])
+            xy[1] := xy[1] + getWindowXbyDecimal(_predefinedItem.pointXOffsetFromMatch)
+            xy[2] := xy[2] + getWindowYbyDecimal(_predefinedItem.pointYOffsetFromMatch)
+            SendDebugMsg("[MatchImage] 클릭 좌표 변환 : " _predefinedItem.name " / " xy[1] ", " xy[2])
+            return xy ; // 스크린 기준 클릭 좌표 반환
+        }
+        else {
+            SendDebugMsg("[MatchImage] 이미지 매치 실패 : " _predefinedItem.name)
+            return ""
+        }
+    }
+
+    Click(xy) {
+        x := xy[1]
+        y := xy[2]
+        SendDebugMsg("[Click]: " x ", " y)
+        ControlClick('X' . x . ' Y' . y, targetWindow, , 'Left', 1, 'NA', ,)
+    }
+
+    ClickObject(itemKey) {
+        _predefinedItem := MatchLibrary[itemKey]
+        x := getControlXbyDecimal(_predefinedItem.pointX)
+        y := getControlYbyDecimal(_predefinedItem.pointY) + targetControlHeightMargin
+        SendDebugMsg("[ClickObject]: " x ", " y)
+        ControlClick('X' . x . ' Y' . y, targetWindow, , 'Left', 1, 'NA', ,)
+    }
+
+    LogicStartLog() {
+        SendUiMsg("[Current] " . g_CurrentLogic . " : " . g_CaseDescription)
+    }
+
+    TryLogicTransition(targetLogic) {
+        global g_CurrentLogic, failCount, globalRetryCount
+        r := 1
+        i := TransitionLibrary[targetLogic]
+        SendDebugMsg("[TryLogicTransition] 타겟 로직: " targetLogic)
+        while r <= 3 {
+            xy := MatchObject(i)
+            if xy {
+                g_CurrentLogic := targetLogic
+                failCount := 0
+                return g_CurrentLogic
+            }
+            else {
+                r := r + 1
+                SendDebugMsg("[TryLogicTransition] 재시도")
+                delayLong()
+            }
+        }
+        failCount := failCount + 1
+        SendUiMsg("[오류] " targetLogic "으로 전환 실패. 재시도합니다.")
+        return false
+    }
+
+    TransitionLibrary := Map(
+        '1-02', 'UserDetailAccept',
+        '1-04', 'UserDetailAccept',
+        '1-05', 'UserDetailFriendNow',
+        '1-06', 'UserDetailDecline',
+    )
