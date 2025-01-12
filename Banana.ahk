@@ -1,8 +1,8 @@
 /************************************************************************
  * @description 바나나 무한 불판 매크로
  * @author Banana-juseyo
- * @date 2024/01/12
- * @version v2.00
+ * @date 2024/01/13
+ * @version v2.01
  * @see {@link https://github.com/banana-juseyo/Banana-Macro-PtcgP Github Repository}
  * @see {@link https://gall.dcinside.com/m/pokemontcgpocket/ DCinside PtcgP Gallery}
  ***********************************************************************/
@@ -14,7 +14,7 @@
 
 global _appTitle := "Banana Macro"
 global _author := "banana-juseyo"
-global _currentVersion := "v2.00"
+global _currentVersion := "v2.01"
 global _website := "https://github.com/banana-juseyo/Banana-Macro-PtcgP"
 global _repoName := "Banana-Macro-PtcgP"
 
@@ -516,9 +516,10 @@ class ConfigGUI {
 
         switch g_UserIni.DisplayResolution {
             global _defaultValue
-            case 'FHD': _defaultValue := "Choose1"
-            case 'QHD': _defaultValue := "Choose2"
-            case '4K': _defaultValue := "Choose3"
+            case 'FHD-100': _defaultValue := "Choose1"
+            case 'FHD-125': _defaultValue := "Choose2"
+            case 'QHD': _defaultValue := "Choose3"
+            case '4K': _defaultValue := "Choose4"
         }
 
         section := { x1: 30, y1: 100, default: _defaultValue }
@@ -527,7 +528,7 @@ class ConfigGUI {
         )
         _confDisplayResolutionTitle.SetFont("q5 s10 w600")
         _confDisplayResolutionField := _gui.Add("DropDownList", Format("x{} y{} w160 {}", section.x1 + 140,
-            section.y1, section.default), ["FHD @125%", "QHD @150%", "4K @200%"])
+            section.y1, section.default), ["FHD @100%", "FHD @125%", "QHD @150%", "4K @200%"])
         _confDisplayResolutionField.SetFont("q5  s13")
         _confDisplayResolutionField.name := "DisplayResolution"
         _confDisplayResolutionHint := _gui.Add("Text", Format("x{} y{} w360 h24", section.x1 + 140, section.y1 + 30),
@@ -614,7 +615,8 @@ class ConfigGUI {
         _gui := this._gui
         g_UserIni := _gui.Submit(TRUE)
         switch g_UserIni.DisplayResolution {
-            case "FHD @125%": g_UserIni.DisplayResolution := "FHD"
+            case "FHD @100%": g_UserIni.DisplayResolution := "FHD-100"
+            case "FHD @125%": g_UserIni.DisplayResolution := "FHD-125"
             case "QHD @150%": g_UserIni.DisplayResolution := "QHD"
             case "4K @200%": g_UserIni.DisplayResolution := "4K"
         }
@@ -758,7 +760,9 @@ Main() {
 
 
     Switch g_CurrentResolution {
-        Case "FHD":
+        Case "FHD-100": 
+            WinMove(, , 403, 962, targetWindow)
+        Case "FHD-125":
             WinMove(, , 403, 970, targetWindow)
         Case "QHD":
             WinMove(, , 543, 1301, targetWindow)
@@ -1071,6 +1075,7 @@ Main() {
                     SendUiMsg("[안내] 친구를 모두 삭제했습니다.")
                     SendUiMsg("[페이즈 전환] 수락을 재개합니다.")
                     PhaseToggler()
+                    globalRetryCount := 0
                     g_CurrentLogic := "1-00"
                     continue
                 }
@@ -1083,6 +1088,7 @@ Main() {
                 if xy {
                     delayLong()
                     Click(xy)
+                    globalRetryCount := 0
                     delayShort()
                 }
                 r := TryLogicTransition('2-02')
