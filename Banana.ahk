@@ -614,9 +614,9 @@ class ConfigGUI {
         _gui := this._gui
         g_UserIni := _gui.Submit(TRUE)
         switch g_UserIni.DisplayResolution {
-            case "FHD (125%)": g_UserIni.DisplayResolution := "FHD"
-            case "QHD (150%)": g_UserIni.DisplayResolution := "QHD"
-            case "4K (200%)": g_UserIni.DisplayResolution := "4K"
+            case "FHD @125%": g_UserIni.DisplayResolution := "FHD"
+            case "QHD @150%": g_UserIni.DisplayResolution := "QHD"
+            case "4K @200%": g_UserIni.DisplayResolution := "4K"
         }
         UpdateUserIni(g_UserIni)
         _gui.Destroy()
