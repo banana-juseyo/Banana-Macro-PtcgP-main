@@ -831,6 +831,7 @@ Main() {
                         Click(xy)
                         delayShort()
                         TryLogicTransition('1-02')
+                        globalRetryCount := 0
                         continue
                     }
                     else {
