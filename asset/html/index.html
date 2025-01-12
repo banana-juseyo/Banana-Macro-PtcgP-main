@@ -3,6 +3,7 @@
 
 <head>
     <link rel="stylesheet" href="./main.css">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <title>Document</title>
 </head>
 
@@ -13,7 +14,7 @@
                 <div class="appLogo"></div>
             </div>
             <div class="headerBarContainer">
-                <div class="versionText" id="versionText">v1.00</div>
+                <div class="versionText" id="versionText">v2.00</div>
                 <div class="updateButton">버전 업데이트</div>
                 <div class="homeButton headerButton" id="headerHomeButton">
                     <div class="homeIcon headerButtonIcon"></div>
@@ -35,7 +36,7 @@
                     <textarea name="hiddenTextArea" id="hiddenTextArea"></textarea>
                     <div class="gitHubLink" id="gitHubLink">
                         <div class="banana"></div> <span
-                            onClick="githubLink()">https://github.com/banana-juseyo/Banana-Macro-PtcgP</span>
+                            onClick="openGitHubLink()">https://github.com/banana-juseyo/Banana-Macro-PtcgP</span>
                     </div>
                 </div>
             </div>
@@ -43,45 +44,68 @@
         <div class="footerContainer footerStopped" id="footerStopped">
             <div class="startButton footerButton cta" id="footerStartButton">
                 <div class="labelContainer">
-                    <span class="footerButtonLabel cta" id="footerStartButtonLabel">시작</span>
+                    <span class="footerButtonLabel cta" id="footerStartButtonLabel">➕ 친구 추가</span>
                     <span class="footerButtonHint">F5</span>
                 </div>
             </div>
             <div class="clearFriendsButton footerButton" id="footerClearFriendsButton">
                 <div class="labelContainer">
-                    <span class="footerButtonLabel" id="clearFriendsButtonLabel">친구 삭제부터 시작</span>
+                    <span class="footerButtonLabel" id="clearFriendsButtonLabel">➖ 친구 삭제</span>
                     <span class="footerButtonHint">F6</span>
                 </div>
             </div>
             <div class="settingsButton footerButton" id="footerSettingsButtonA">
                 <div class="labelContainer">
-                    <span class="footerButtonLabel" id="settingsButtonLabelA">설정</span>
+                    <span class="footerButtonLabel" id="settingsButtonLabelA">⚙️ 설정</span>
                 </div>
             </div>
         </div>
         <div class="footerContainer footerPlaying" id="footerPlaying">
             <div class="pauseButton footerButton" id="footerPauseButton">
                 <div class="labelContainer">
-                    <span class="footerButtonLabel" id="footerPauseButtonLabel">일시 정지</span>
-                    <span class="footerButtonHint">F5</span>
+                    <span class="footerButtonLabel" id="footerPauseButtonLabel">⏸️ 일시 정지</span>
+                    <span class="footerButtonHint">F7</span>
                 </div>
             </div>
             <div class="stopButton footerButton cta" id="footerStopButton">
                 <div class="labelContainer">
-                    <span class="footerButtonLabel cta" id="footerStopButtonLabel">중지 </span>
-                    <span class="footerButtonHint">F7</span>
+                    <span class="footerButtonLabel cta" id="footerStopButtonLabel">⏹️ 중지</span>
+                    <span class="footerButtonHint"></span>
                 </div>
             </div>
             <div class="settingsButton footerButton" id="footerSettingsButtonB">
                 <div class="labelContainer">
-                    <span class="footerButtonLabel" id="settingsButtonLabelB">설정</span>
+                    <span class="footerButtonLabel" id="settingsButtonLabelB">⚙️ 설정</span>
                 </div>
             </div>
         </div>
-
+        <div class="footerContainer footerPlaying" id="footerPausing">
+            <div class="pauseButton footerButton" id="footerResumeButton">
+                <div class="labelContainer">
+                    <span class="footerButtonLabel" id="footerResumeButtonLabel">▶️ 재개</span>
+                    <span class="footerButtonHint">F7</span>
+                </div>
+            </div>
+            <div class="stopButton footerButton cta" id="footerStopButton-for-Pausing">
+                <div class="labelContainer">
+                    <span class="footerButtonLabel cta" id="footerStopButtonLabel-for-Pausing">⏹️ 중지</span>
+                    <span class="footerButtonHint"></span>
+                </div>
+            </div>
+            <div class="settingsButton footerButton" id="footerSettingsButtonB">
+                <div class="labelContainer">
+                    <span class="footerButtonLabel" id="settingsButtonLabelB">⚙️ 설정</span>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 <script>
+
+    document.addEventListener('keydown', function (e) {
+        e.preventDefault();
+    }, true);
+
     document.getElementById("headerHomeButton").onclick = function () {
         chrome.webview.postMessage("_button_click_header_home");
     }
@@ -103,17 +127,28 @@
     document.getElementById("footerPauseButton").onclick = function () {
         chrome.webview.postMessage("_button_click_footer_pause");
     }
-    document.getElementById("footerStopButton").onclick = function () {
+    document.getElementById("footerResumeButton").onclick = function () {
+        chrome.webview.postMessage("_button_click_footer_pause");
+    }
+    e = document.querySelectorAll(".stopButton")
+    for (element of e) {
+        element.onclick = function () {
         chrome.webview.postMessage("_button_click_footer_stop");
+    }
     }
     document.getElementById("footerSettingsButtonB").onclick = function () {
         chrome.webview.postMessage("_button_click_footer_settings");
     }
 
-    function githubLink() {
+
+    function githubButton() {
         document.getElementById("headerHomeButton").onclick = function () {
-            chrome.webview.postMessage("_button_click_header_home");
+            openGitHubLink();
         }
+    }
+
+    function openGitHubLink() {
+        chrome.webview.postMessage("_button_click_header_home");
     }
 
     function updateVersionText(version) {
@@ -143,24 +178,30 @@
         const footerPlaying = document.getElementById('footerPlaying');
         if (playing == '1') {
             footerStopped.style.display = "none"
+            footerPausing.style.display = "none"
             footerPlaying.style.display = "flex"
         }
         if (playing == '0') {
             footerStopped.style.display = "flex"
+            footerPausing.style.display = "none"
             footerPlaying.style.display = "none"
         }
     }
 
     function SwitchPauseMode(pausing) {
-        const pauseButton = document.getElementById('footerPauseButton')
-        const pauseButtonLabel = document.getElementById('footerPauseButtonLabel')
+        const footerPausing = document.getElementById('footerPausing');
+        const footerPlaying = document.getElementById('footerPlaying');
+        const footerStopped = document.getElementById('footerStopped');
+       
         if (pausing == '1') {
-            pauseButtonLabel.textContent = "재개"
-            pauseButton.style.backgroundColor = "#DBDBDB"
+            footerStopped.style.display = "none"
+            footerPlaying.style.display = "none"
+            footerPausing.style.display = "flex"
         }
         if (pausing == '0') {
-            pauseButtonLabel.textContent = "일시 정지"
-            pauseButton.style.backgroundColor = "#FAFAFA"
+            footerStopped.style.display = "none"
+            footerPlaying.style.display = "flex"
+            footerPausing.style.display = "none"
         }
     }
 
