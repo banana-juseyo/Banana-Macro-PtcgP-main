@@ -86,7 +86,7 @@ updateScriptPath := A_Temp "\updater.ahk"
 if FileExist(updateScriptPath)
     FileDelete(updateScriptPath)
 ; 스크립트 업데이트 실행
-; DownloaderInstance.CheckForUpdates()
+DownloaderInstance.CheckForUpdates()
 
 class Downloader {
     gui := ""
@@ -275,6 +275,22 @@ class Downloader {
 
     ; 스크립트 최신 버전 확인
     CheckForUpdates() {
+        url := "https://api.github.com/repos/banana-juseyo/Banana-Macro-PtcgP/releases"
+        try {
+            http := ComObject("WinHttp.WinHttpRequest.5.1")
+            http.Open("GET", url, true)
+            http.Send()
+            http.WaitForResponse()
+
+            response := http.ResponseText
+            response := Jxon_Load(&response)
+            for i in response {
+                if i["tag_name"] == _currentVersion && i["prerelease"] == true {
+                    return TRUE
+                }
+            }
+        }
+
         url := "https://api.github.com/repos/banana-juseyo/Banana-Macro-PtcgP/releases/latest"
         try {
             http := ComObject("WinHttp.WinHttpRequest.5.1")
@@ -286,6 +302,7 @@ class Downloader {
             response := Jxon_Load(&response)
             ; 버전 비교
             latestVersion := response["tag_name"]
+
             if (latestVersion != _currentVersion) {
                 ; 업데이트가 필요한 경우
                 fileInfo := Map(
