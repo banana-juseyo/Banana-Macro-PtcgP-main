@@ -66,28 +66,28 @@ ObjectLibrary.FriendRequestListActive := FriendRequestListActive
 ObjectLibrary.UserDetailRequestNotFound := UserDetailRequestNotFound
 ObjectLibrary.FriendListActive := FriendListActive
 
-ImageSet_FriendRequestListCard := Map('4K', A_ScriptDir "\asset\match\4k\FriendRequestListCard.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendRequestListCard.png",'FHD', A_ScriptDir "\asset\match\fhd\FriendRequestListCard.png")
-ImageFile_FriendRequestListClearButton := Map('4K', A_ScriptDir "\asset\match\4k\FriendRequestListClearButton.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendRequestListClearButton.png",'FHD', A_ScriptDir "\asset\match\fhd\FriendRequestListClearButton.png")
-ImageFile_UserDetailEmblem := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailEmblem.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailEmblem.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailEmblem.png")
-ImageFile_UserDetailMybest1 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailMybest1.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailMybest1.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailMybest1.png")
-ImageFile_UserDetailMybest2 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailMybest2.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailMybest2.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailMybest2.png")
-ImageFile_UserDetailMybestButton1 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailMybestButton1.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailMybestButton1.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailMybestButton1.png")
-ImageFile_UserDetailMybestButton2 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailMybestButton2.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailMybestButton2.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailMybestButton2.png")
-ImageFile_PassportPikachu := Map('4K', A_ScriptDir "\asset\match\4k\PassportPikachu.png", 'QHD', A_ScriptDir "\asset\match\qhd\PassportPikachu.png",'FHD', A_ScriptDir "\asset\match\fhd\PassportPikachu.png")
-ImageFile_UserDetailAccept := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailAccept.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailAccept.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailAccept.png")
-ImageFile_UserDetailDecline := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailDecline.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailDecline.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailDecline.png")
-ImageFile_UserDetailRequestFriend := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailRequestFriend.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailRequestFriend.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailRequestFriend.png")
-ImageFile_UserDetailFriendNow := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailFriendNow.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailFriendNow.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailFriendNow.png")
-ImageFile_UserDetailEmpty1 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailEmpty1.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailEmpty1.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailEmpty1.png")
-ImageFile_UserDetailEmpty2 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailEmpty2.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailEmpty2.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailEmpty2.png")
-ImageFile_FriendsMenuButton := Map('4K', A_ScriptDir "\asset\match\4k\FriendsMenuButton.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendsMenuButton.png",'FHD', A_ScriptDir "\asset\match\fhd\FriendsMenuButton.png")
-ImageFile_FriendListCard := Map('4K', A_ScriptDir "\asset\match\4k\FriendListCard.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendListCard.png",'FHD', A_ScriptDir "\asset\match\fhd\FriendListCard.png")
-ImageFile_RemoveFriendConfirm := Map('4K', A_ScriptDir "\asset\match\4k\RemoveFriendConfirm.png", 'QHD', A_ScriptDir "\asset\match\qhd\RemoveFriendConfirm.png",'FHD', A_ScriptDir "\asset\match\fhd\RemoveFriendConfirm.png")
-ImageFile_FriendRequestListEmpty := Map('4K', A_ScriptDir "\asset\match\4k\FriendRequestListEmpty.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendRequestListEmpty.png",'FHD', A_ScriptDir "\asset\match\fhd\FriendRequestListEmpty.png")
-ImageFile_FriendListEmpty := Map('4K', A_ScriptDir "\asset\match\4k\FriendListEmpty.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendListEmpty.png",'FHD', A_ScriptDir "\asset\match\fhd\FriendListEmpty.png")
-ImageFile_FriendRequestListActive := Map('4K', A_ScriptDir "\asset\match\4k\FriendRequestListActive.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendRequestListActive.png",'FHD', A_ScriptDir "\asset\match\fhd\FriendRequestListActive.png")
-ImageFile_UserDetailRequestNotFound := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailRequestNotFound.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailRequestNotFound.png",'FHD', A_ScriptDir "\asset\match\fhd\UserDetailRequestNotFound.png")
-ImageFile_FriendListActive := Map('4K', A_ScriptDir "\asset\match\4k\FriendListActive.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendListActive.png",'FHD', A_ScriptDir "\asset\match\fhd\FriendListActive.png")
+ImageSet_FriendRequestListCard := Map('4K', A_ScriptDir "\asset\match\4k\FriendRequestListCard.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendRequestListCard.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\FriendRequestListCard.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\FriendRequestListCard.png")
+ImageFile_FriendRequestListClearButton := Map('4K', A_ScriptDir "\asset\match\4k\FriendRequestListClearButton.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendRequestListClearButton.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\FriendRequestListClearButton.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\FriendRequestListClearButton.png")
+ImageFile_UserDetailEmblem := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailEmblem.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailEmblem.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailEmblem.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailEmblem.png")
+ImageFile_UserDetailMybest1 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailMybest1.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailMybest1.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailMybest1.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailMybest1.png")
+ImageFile_UserDetailMybest2 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailMybest2.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailMybest2.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailMybest2.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailMybest2.png")
+ImageFile_UserDetailMybestButton1 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailMybestButton1.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailMybestButton1.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailMybestButton1.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailMybestButton1.png")
+ImageFile_UserDetailMybestButton2 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailMybestButton2.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailMybestButton2.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailMybestButton2.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailMybestButton2.png")
+ImageFile_PassportPikachu := Map('4K', A_ScriptDir "\asset\match\4k\PassportPikachu.png", 'QHD', A_ScriptDir "\asset\match\qhd\PassportPikachu.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\PassportPikachu.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\PassportPikachu.png")
+ImageFile_UserDetailAccept := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailAccept.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailAccept.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailAccept.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailAccept.png")
+ImageFile_UserDetailDecline := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailDecline.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailDecline.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailDecline.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailDecline.png")
+ImageFile_UserDetailRequestFriend := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailRequestFriend.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailRequestFriend.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailRequestFriend.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailRequestFriend.png")
+ImageFile_UserDetailFriendNow := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailFriendNow.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailFriendNow.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailFriendNow.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailFriendNow.png")
+ImageFile_UserDetailEmpty1 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailEmpty1.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailEmpty1.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailEmpty1.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailEmpty1.png")
+ImageFile_UserDetailEmpty2 := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailEmpty2.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailEmpty2.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailEmpty2.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailEmpty2.png")
+ImageFile_FriendsMenuButton := Map('4K', A_ScriptDir "\asset\match\4k\FriendsMenuButton.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendsMenuButton.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\FriendsMenuButton.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\FriendsMenuButton.png")
+ImageFile_FriendListCard := Map('4K', A_ScriptDir "\asset\match\4k\FriendListCard.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendListCard.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\FriendListCard.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\FriendListCard.png")
+ImageFile_RemoveFriendConfirm := Map('4K', A_ScriptDir "\asset\match\4k\RemoveFriendConfirm.png", 'QHD', A_ScriptDir "\asset\match\qhd\RemoveFriendConfirm.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\RemoveFriendConfirm.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\RemoveFriendConfirm.png")
+ImageFile_FriendRequestListEmpty := Map('4K', A_ScriptDir "\asset\match\4k\FriendRequestListEmpty.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendRequestListEmpty.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\FriendRequestListEmpty.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\FriendRequestListEmpty.png")
+ImageFile_FriendListEmpty := Map('4K', A_ScriptDir "\asset\match\4k\FriendListEmpty.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendListEmpty.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\FriendListEmpty.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\FriendListEmpty.png")
+ImageFile_FriendRequestListActive := Map('4K', A_ScriptDir "\asset\match\4k\FriendRequestListActive.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendRequestListActive.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\FriendRequestListActive.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\FriendRequestListActive.png")
+ImageFile_UserDetailRequestNotFound := Map('4K', A_ScriptDir "\asset\match\4k\UserDetailRequestNotFound.png", 'QHD', A_ScriptDir "\asset\match\qhd\UserDetailRequestNotFound.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\UserDetailRequestNotFound.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\UserDetailRequestNotFound.png")
+ImageFile_FriendListActive := Map('4K', A_ScriptDir "\asset\match\4k\FriendListActive.png", 'QHD', A_ScriptDir "\asset\match\qhd\FriendListActive.png",'FHD-100', A_ScriptDir "\asset\match\fhd-100\FriendListActive.png",'FHD-125', A_ScriptDir "\asset\match\fhd-125\FriendListActive.png")
 
 
 ; // 템플릿
@@ -116,7 +116,7 @@ FriendRequestListCard.rangeY1 := .20
 FriendRequestListCard.rangeX2 := .99
 FriendRequestListCard.rangeY2 := .35
 FriendRequestListCard.matchImage := ImageSet_FriendRequestListCard
-FriendRequestListCard.matchTolerance := 5
+FriendRequestListCard.matchTolerance := 10
 
 FriendRequestListClearButton.name := "FriendRequestListClearButton"
 FriendRequestListClearButton.type := "Button"
@@ -129,7 +129,7 @@ FriendRequestListClearButton.rangeY1 := .85
 FriendRequestListClearButton.rangeX2 := .99
 FriendRequestListClearButton.rangeY2 := .99
 FriendRequestListClearButton.matchImage := ImageFile_FriendRequestListClearButton
-FriendRequestListClearButton.matchTolerance := 5
+FriendRequestListClearButton.matchTolerance := 10
 
 ; userDetailEmblem.name := "userDetailEmblem"
 ; userDetailEmblem.type := "Anchor"
@@ -142,7 +142,7 @@ FriendRequestListClearButton.matchTolerance := 5
 ; userDetailEmblem.rangeX2 := 
 ; userDetailEmblem.rangeY2 := 
 ; userDetailEmblem.matchImage := ImageFile_userDetailEmblem
-UserDetailEmblem.matchTolerance := 5
+UserDetailEmblem.matchTolerance := 10
 
 PassportPikachu.name := "PassportPikachu"
 PassportPikachu.type := "Anchor"
@@ -168,7 +168,7 @@ UserDetailAccept.rangeY1 := .50
 UserDetailAccept.rangeX2 := .95
 UserDetailAccept.rangeY2 := .65
 UserDetailAccept.matchImage := ImageFile_UserDetailAccept
-UserDetailAccept.matchTolerance := 5
+UserDetailAccept.matchTolerance := 10
 
 UserDetailDecline.name := "UserDetailDecline"
 UserDetailDecline.type := "Button"
@@ -181,7 +181,7 @@ UserDetailDecline.rangeY1 := .50
 UserDetailDecline.rangeX2 := .95
 UserDetailDecline.rangeY2 := .65
 UserDetailDecline.matchImage := ImageFile_UserDetailDecline
-UserDetailDecline.matchTolerance := 5
+UserDetailDecline.matchTolerance := 10
 
 UserDetailRequestFriend.name := "UserDetailRequestFriend"
 UserDetailRequestFriend.type := "Button"
@@ -194,7 +194,7 @@ UserDetailRequestFriend.rangeY1 := .50
 UserDetailRequestFriend.rangeX2 := .95
 UserDetailRequestFriend.rangeY2 := .65
 UserDetailRequestFriend.matchImage := ImageFile_UserDetailRequestFriend
-UserDetailRequestFriend.matchTolerance := 5
+UserDetailRequestFriend.matchTolerance := 10
 
 UserDetailFriendNow.name := "UserDetailFriendNow"
 UserDetailFriendNow.type := "Button"
@@ -207,7 +207,7 @@ UserDetailFriendNow.rangeY1 := .50
 UserDetailFriendNow.rangeX2 := .80
 UserDetailFriendNow.rangeY2 := .65
 UserDetailFriendNow.matchImage := ImageFile_UserDetailFriendNow
-UserDetailFriendNow.matchTolerance := 5
+UserDetailFriendNow.matchTolerance := 10
 
 UserDetailMybest1.name := "UserDetailMybest1"
 UserDetailMybest1.type := "Anchor"
@@ -246,7 +246,7 @@ UserDetailMybestButton1.rangeY1 := .85
 UserDetailMybestButton1.rangeX2 := .78
 UserDetailMybestButton1.rangeY2 := .95
 UserDetailMybestButton1.matchImage := ImageFile_UserDetailMybestButton1
-UserDetailMybestButton1.matchTolerance := 5
+UserDetailMybestButton1.matchTolerance := 10
 
 UserDetailMybestButton2.name := "UserDetailMybestButton2"
 UserDetailMybestButton2.type := "Button"
@@ -259,7 +259,7 @@ UserDetailMybestButton2.rangeY1 := .75
 UserDetailMybestButton2.rangeX2 := .78
 UserDetailMybestButton2.rangeY2 := .85
 UserDetailMybestButton2.matchImage := ImageFile_UserDetailMybestButton2
-UserDetailMybestButton2.matchTolerance := 5
+UserDetailMybestButton2.matchTolerance := 10
 
 UserDetailEmpty1.name := "UserDetailEmpty1"
 UserDetailEmpty1.type := "Anchor"
@@ -298,7 +298,7 @@ FriendsMenuButton.rangeY1 := .80
 FriendsMenuButton.rangeX2 := .30
 FriendsMenuButton.rangeY2 := .95
 FriendsMenuButton.matchImage := ImageFile_FriendsMenuButton
-FriendsMenuButton.matchTolerance := 5
+FriendsMenuButton.matchTolerance := 10
 
 FriendListCard.name := "FriendListCard"
 FriendListCard.type := "Button"
@@ -311,7 +311,7 @@ FriendListCard.rangeY1 := .25
 FriendListCard.rangeX2 := .99
 FriendListCard.rangeY2 := .35
 FriendListCard.matchImage := ImageFile_FriendListCard
-FriendListCard.matchTolerance := 50
+FriendListCard.matchTolerance := 10
 
 RemoveFriendConfirm.name := "RemoveFriendConfirm"
 RemoveFriendConfirm.type := "Button"
@@ -324,7 +324,7 @@ RemoveFriendConfirm.rangeY1 := .55
 RemoveFriendConfirm.rangeX2 := .100
 RemoveFriendConfirm.rangeY2 := .70
 RemoveFriendConfirm.matchImage := ImageFile_RemoveFriendConfirm
-RemoveFriendConfirm.matchTolerance := 5
+RemoveFriendConfirm.matchTolerance := 10
 
 FriendRequestListEmpty.name := "FriendRequestListEmpty"
 FriendRequestListEmpty.type := "Anchor"
@@ -337,7 +337,7 @@ FriendRequestListEmpty.rangeY1 := .45
 FriendRequestListEmpty.rangeX2 := .80
 FriendRequestListEmpty.rangeY2 := .60
 FriendRequestListEmpty.matchImage := ImageFile_FriendRequestListEmpty
-FriendRequestListEmpty.matchTolerance := 5
+FriendRequestListEmpty.matchTolerance := 10
 
 FriendListEmpty.name := "FriendListEmpty"
 FriendListEmpty.type := "Anchor"
@@ -350,7 +350,7 @@ FriendListEmpty.rangeY1 := .45
 FriendListEmpty.rangeX2 := .80
 FriendListEmpty.rangeY2 := .60
 FriendListEmpty.matchImage := ImageFile_FriendListEmpty
-FriendListEmpty.matchTolerance := 5
+FriendListEmpty.matchTolerance := 10
 
 FriendRequestMenuButton.name := "FriendRequestMenuButton"
 FriendRequestMenuButton.type := "Button"
