@@ -1,8 +1,8 @@
 /************************************************************************
  * @description 바나나 무한 불판 매크로
  * @author Banana-juseyo
- * @date 2024/01/13
- * @version v2.01
+ * @date 2024/01/12
+ * @version v2.00
  * @see {@link https://github.com/banana-juseyo/Banana-Macro-PtcgP Github Repository}
  * @see {@link https://gall.dcinside.com/m/pokemontcgpocket/ DCinside PtcgP Gallery}
  ***********************************************************************/
@@ -14,7 +14,7 @@
 
 global _appTitle := "Banana Macro"
 global _author := "banana-juseyo"
-global _currentVersion := "v2.01"
+global _currentVersion := "v2.00"
 global _website := "https://github.com/banana-juseyo/Banana-Macro-PtcgP"
 global _repoName := "Banana-Macro-PtcgP"
 
@@ -833,9 +833,9 @@ Main() {
                     if xy {
                         delayLong()
                         Click(xy)
-                        delayShort()
-                        TryLogicTransition('1-02')
+                        delayLong()
                         globalRetryCount := 0
+                        TryLogicTransition('1-02')
                         continue
                     }
                     else {
@@ -864,9 +864,16 @@ Main() {
                     TryLogicTransition('1-01')
                     continue
                 }
+                ; // 유저가 신청 취소한 경우
+                xy := MatchObject2(ObjectLibrary.UserDetailRequestFriend)
+                if xy {
+                    SendUiMsg("[예외] 유저의 신청 취소")
+                    ClickCloseModalButton()
+                    TryLogicTransition('1-01')
+                    continue
+                }
                 ; // 마이 베스트 설정 1 (엠블럼 O)
                 xy := MatchObject2(ObjectLibrary.UserDetailMybestButton1)
-
                 if xy {
                     Click(xy)
                     delayShort()
@@ -885,14 +892,6 @@ Main() {
                     delayXLong()
                     g_CurrentLogic := '1-03'
                     failCount := 0
-                    continue
-                }
-                ; // 유저가 신청 취소한 경우
-                xy := MatchObject2(ObjectLibrary.UserDetailRequestFriend)
-                if xy {
-                    SendUiMsg("[예외] 유저의 신청 취소")
-                    ClickCloseModalButton()
-                    TryLogicTransition('1-01')
                     continue
                 }
                 ; // 마이 베스트 미설정 1 (엠블럼 O)
@@ -1088,11 +1087,11 @@ Main() {
                 if xy {
                     delayLong()
                     Click(xy)
-                    globalRetryCount := 0
                     delayShort()
                 }
                 r := TryLogicTransition('2-02')
                 if r {
+                    globalRetryCount := 0
                     continue
                 }
                 else {
@@ -1610,8 +1609,8 @@ TryLogicTransition(targetLogic) {
 
 TransitionLibrary := Map(
     '1-01', ObjectLibrary.FriendRequestListActive,
-    '1-02', ObjectLibrary.UserDetailAccept,
-    '1-04', ObjectLibrary.UserDetailAccept,
+    '1-02', ObjectLibrary.userDetailEmblem,
+    '1-04', ObjectLibrary.userDetailEmblem,
     '1-05', ObjectLibrary.UserDetailFriendNow,
     '1-06', ObjectLibrary.UserDetailDecline,
     '1-07', ObjectLibrary.UserDetailRequestFriend,
