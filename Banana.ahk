@@ -205,7 +205,7 @@ class Downloader {
             }
         }
         catch Error as e {
-            MsgBox ("[UpdateDownloadProgress]`n파일 다운로드 중 오류가 발생했습니다.`n" e.Message)
+            SendDebugMsg ("[UpdateDownloadProgress]`n파일 다운로드 중 오류가 발생했습니다.`n" e.Message)
             Reload
         }
     }
