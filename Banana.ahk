@@ -2,7 +2,7 @@
  * @description 바나나 무한 불판 매크로
  * @author Banana-juseyo
  * @date 2024/01/12
- * @version v2.02
+ * @version v2.03
  * @see {@link https://github.com/banana-juseyo/Banana-Macro-PtcgP Github Repository}
  * @see {@link https://gall.dcinside.com/m/pokemontcgpocket/ DCinside PtcgP Gallery}
  ***********************************************************************/
@@ -14,7 +14,7 @@
 
 global _appTitle := "Banana Macro"
 global _author := "banana-juseyo"
-global _currentVersion := "v2.02"
+global _currentVersion := "v2.03"
 global _website := "https://github.com/banana-juseyo/Banana-Macro-PtcgP"
 global _repoName := "Banana-Macro-PtcgP"
 
