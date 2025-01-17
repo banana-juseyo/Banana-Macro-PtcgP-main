@@ -6,7 +6,7 @@
 무료 오픈소스 프로그램인 AutoHotkey를 사용합니다.  
 
 # 최신 버전 다운로드
-[**다운로드**](https://github.com/banana-juseyo/Banana-Macro-PtcgP/archive/refs/heads/main.zip)  
+[**다운로드 (v2.03)**](https://github.com/banana-juseyo/Banana-Macro-PtcgP/archive/refs/heads/main.zip)  
   
 # 설치
 1. AutoHotkey v2 최신 버전을 설치  
