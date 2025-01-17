@@ -76,9 +76,9 @@ https://gall.dcinside.com/m/pokemontcgpocket/263730
 - "thqby" for WebView2 control in ahk  
 https://github.com/thqby/ahk2_lib  
 - "TheArkive" for JXON_ahk2  
-https://github.com/TheArkive/JXON_ahk2
-- "iseahound" for ImagePut
-https://github.com/iseahound/ImagePut
+https://github.com/TheArkive/JXON_ahk2  
+- "iseahound" for ImagePut  
+https://github.com/iseahound/ImagePut  
   
 # 수정 & 재배포
 - GPL-3.0 하에 자유롭게 수정 재배포 가능
