@@ -1471,13 +1471,13 @@ StartRun(startLogic) {
 }
 
 FinishRun() {
+    Exit
     global g_IsRunning
     global g_IsPausing
     g_IsRunning := FALSE
     g_IsPausing := FALSE
     wv.ExecuteScriptAsync("SwitchUIMode('" FALSE "')")
     SendUiMsg("⏹️ 동작을 중지합니다.")
-    Exit
 }
 
 TogglePauseMode() {
