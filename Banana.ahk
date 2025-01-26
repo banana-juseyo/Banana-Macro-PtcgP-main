@@ -2,7 +2,7 @@
  * @description 바나나 무한 불판 매크로
  * @author Banana-juseyo
  * @date 2024/01/12
- * @version v2.03
+ * @version v2.07
  * @see {@link https://github.com/banana-juseyo/Banana-Macro-PtcgP Github Repository}
  * @see {@link https://gall.dcinside.com/m/pokemontcgpocket/ DCinside PtcgP Gallery}
  ***********************************************************************/
@@ -14,15 +14,15 @@
 
 global _appTitle := "Banana Macro"
 global _author := "banana-juseyo"
-global _currentVersion := "v2.03"
+global _currentVersion := "v2.07"
 global _website := "https://github.com/banana-juseyo/Banana-Macro-PtcgP"
 global _repoName := "Banana-Macro-PtcgP"
 
 ; 디버그 모드
 global _debug := FALSE
+global g_PassportMode := FALSE
 
 #Requires AutoHotkey v2.0
-#Include .\app\WebView2.ahk
 #Include .\app\_JXON.ahk
 #Include .\app\ObjectLibrary.ahk
 #Include .\app\ImagePut.ahk
@@ -36,6 +36,9 @@ global _configGUIWindow := ""
 global g_CurrentLogic := ""
 global g_CaseDescription := ""
 global g_CurrentResolution := ""
+global g_RemoveFriendPosition := 1
+global g_ClosedUserExists := FALSE
+global g_MsedgePath := ""
 global GuiInstance := {}
 global recentText := ""
 global RecentTextCtrl := {}
@@ -53,7 +56,6 @@ global targetControlY := ''
 global targetControlWidth := ''
 global targetControlHeight := ''
 global targetControlHeightMargin := ''
-global Match := MatchClass()
 
 ; 환경값 초기화 & 기본값
 global _delayConfig := 150
@@ -76,10 +78,52 @@ if (_debug == TRUE) {
 }
 SendDebugMsg('Debug message will be shown here.')
 
+CheckLocalMsEdgeDll() {
+    ; 메인 폴더 경로와 찾을 파일명 설정
+    edgePath := "C:\Program Files (x86)\Microsoft\Edge\Application\"  ; 검색할 메인 폴더 경로
+    targetFile := "msedge.dll"         ; 찾을 파일명
+
+    ; 모든 하위 폴더를 배열로 가져오기
+    folders := []
+    loop files, edgePath "\*", "D" {
+        folders.Push(A_LoopFilePath)
+    }
+
+    ; 각 폴더에서 파일 검색
+    for folder in folders {
+        fileFullPath := folder "\" targetFile
+        if FileExist(fileFullPath) {
+            SendDebugMsg "파일을 찾았습니다: " fileFullPath
+            return fileFullPath
+        }
+    }
+    return ""
+}
+
+dllPath := A_ScriptDir . "\app\WebView2Loader.dll"
+global g_MsedgePath := CheckLocalMsEdgeDll()
+global edgeRuntime := ''
+if g_MsedgePath {
+    edgeRuntime := g_MsedgePath
+}
+else {
+    edgeRuntime := A_ScriptDir . "\app\msedge.dll"
+}
+
+if !FileExist(dllPath) {
+    MsgBox "WebView2Loader.dll 파일이 존재하지 않습니다: " dllPath
+    ExitApp
+}
+
+#Include .\app\WebView2.ahk
+
 ;; 실행 시 업데이트/필수 파일 자동 다운로드 로직
 DownloaderInstance := Downloader()
-;; msedge.dll 파일 확인
-DownloaderInstance.CheckMsedgeDLL()
+
+if ( NOT g_MsedgePath) {
+    ;; msedge.dll 파일 확인
+    DownloaderInstance.CheckMsedgeDLL()
+}
 ;; 스크립트 업데이트 확인
 ; 임시 폴더의 업데이트 스크립트 삭제
 updateScriptPath := A_Temp "\updater.ahk"
@@ -384,11 +428,11 @@ d := 1.25
 Switch g_CurrentResolution {
     global d
     Case "FHD":
-        d:= 1.25
+        d := 1.25
     Case "QHD":
-        d:= 1.5
+        d := 1.5
     Case "4K":
-        d:= 2
+        d := 2
 }
 width := Round(560 * d)
 height := Round(432 * d)
@@ -407,7 +451,8 @@ calculatedHeigth := 432 * dpiScale
 ui.Show("center W" calculatedWidth " H" calculatedHeigth)
 g_UiWindow := WinGetID(A_ScriptName, , "Code",)
 WinSetTitle _appTitle . " " . _currentVersion, g_UiWindow
-WinSetRegion Format("0-0 w{1} h{2} r{3}-{3}", calculatedWidth, calculatedHeigth, radius), g_UiWindow
+; WinSetRegion Format("0-0 w{1} h{2} r{3}-{3}", calculatedWidth, calculatedHeigth, radius), g_UiWindow
+WinSetRegion Format("0-0 w{1} h{2} r{3}-{3}", 560, 432, radius), g_UiWindow
 
 ;; 메인 UI 생성 (웹뷰2)
 wvc := WebView2.CreateControllerAsync(ui.Hwnd, { AdditionalBrowserArguments: "--enable-features=msWebView2EnableDraggableRegions" })
@@ -458,8 +503,7 @@ HandleWebMessageReceived(sender, args) {
             }
             return
         case '_button_click_footer_stop':
-            Pause 0
-            FinishRun()
+            Reload
             return
         case '_button_click_footer_settings':
             GuiInstance := ConfigGUI()
@@ -621,6 +665,7 @@ class ConfigGUI {
             case "4K @200%": g_UserIni.DisplayResolution := "4K"
         }
         UpdateUserIni(g_UserIni)
+        UpdateConfig()
         _gui.Destroy()
         return
 
@@ -634,33 +679,35 @@ class ConfigGUI {
     }
 }
 
-;; 환경값 재설정
+;; 환경값 업데이트 함수
+UpdateConfig() {
+    _instanceNameConfig := g_UserIni.InstanceName
+    _displayResolutionConfig := g_UserIni.DisplayResolution
 _delayConfig := g_UserIni.Delay
-_instanceNameConfig := g_UserIni.InstanceName
 _acceptingTermConfig := g_UserIni.AcceptingTerm * 60000
 _deletingTermConfig := g_UserIni.BufferTerm * 60000
-_displayResolutionConfig := g_UserIni.DisplayResolution
+}
 
-F5:: {
-    SetTimer(() => StartRun("00"), -1)
-}
-F6:: {
-    SetTimer(() => StartRun("D00"), -1)
-}
-F7:: {
-    TogglePauseMode()
-    Pause -1
-    if (g_IsPausing) {
-        SendUiMsg("⏸️ 일시 정지")
-    }
-    else if ( NOT g_IsPausing) {
-        SendUiMsg("▶️ 재개")
-    }
-    return
-}
-F8:: {
-    Reload
-}
+; F5:: {
+;     SetTimer(() => StartRun("00"), -1)
+; }
+; F6:: {
+;     SetTimer(() => StartRun("D00"), -1)
+; }
+; F7:: {
+;     TogglePauseMode()
+;     Pause -1
+;     if (g_IsPausing) {
+;         SendUiMsg("⏸️ 일시 정지")
+;     }
+;     else if ( NOT g_IsPausing) {
+;         SendUiMsg("▶️ 재개")
+;     }
+;     return
+; }
+; F8:: {
+;     Reload
+; }
 
 #HotIf WinActive(_configGUIWindow)
 ~Enter:: {
@@ -678,37 +725,9 @@ SendUiMsg("바나나 무한 불판 매크로 " _currentVersion " by banana-jusey
 SendUiMsg(" ")
 SendUiMsg("매크로 초기화 완료")
 
-class MatchClass {
-    _matchedX := 0
-    _matchedY := 0
-
-    __New() {
-    }
-
-    MatchImage(itemName) {
-        item := ObjectLibrary[itemName]
-
-        r := ImageSearch(
-            &matchedX
-            , &matchedY
-            , getScreenXbyWindowPercentage(item.rangeX1)
-            , getScreenYbyWindowPercentage(item.rangeY1)
-            , getScreenXbyWindowPercentage(item.rangeX2)
-            , getScreenYbyWindowPercentage(item.rangeY2)
-            , '*' item.matchTolerance ' ' . item.matchImage[g_CurrentResolution])
-        if r {
-            this._matchedX := matchedX
-            this._matchedY := matchedY
-        }
-        return r
-    }
-
-}
-
 ;; 메인 함수 선언
 Main() {
     ; 전역 변수 초기화
-    global Match
     global g_CurrentLogic
     global g_CaseDescription
     global g_IsRunning
@@ -784,14 +803,13 @@ Main() {
 
             ; 00. 화면 초기화
             case '1-00':
-                ;; 환경값 재설정
-                _delayConfig := g_UserIni.Delay
-                _instanceNameConfig := g_UserIni.InstanceName
-                _acceptingTermConfig := g_UserIni.AcceptingTerm * 60000
-                _deletingTermConfig := g_UserIni.BufferTerm * 60000
+                UpdateConfig()
 
                 SendUiMsg("✅ 친구 추가 시작")
                 g_CaseDescription := '화면 초기화'
+                if g_PassportMode == FALSE {
+                    g_CaseDescription := "여권 검사 없이 수락 진행"
+                }
                 LogicStartLog()
                 InitLocation('RequestList')
                 g_CurrentLogic := "1-01"
@@ -801,7 +819,7 @@ Main() {
 
                 ; 01. 친구 신청 화면 -> 여러 로직 포함
             case '1-01':
-                g_CaseDescription := '신청 확인'
+                g_CaseDescription := g_PassportMode ? '신청 확인' : "신청 수락"
                 LogicStartLog()
 
                 elapsedTime := _getElapsedTime()
@@ -815,6 +833,7 @@ Main() {
                     Sleep(_deletingTermConfig)
                     continue
                 }
+
                 ; // failcount 처리, 초기 화면이라 무한 반복 가능성이 있어 globalRetryCount 포함
                 if (failCount >= 5) {
                     if (globalRetryCount >= 5) {
@@ -827,9 +846,44 @@ Main() {
                     globalRetryCount := globalRetryCount + 1
                     continue
                 }
+
                 ; // 수락 로직 (기본 플로우)
-                if g_NowAccepting == TRUE {
-                    xy := MatchObject2(ObjectLibrary.FriendRequestListCard)
+                ; // 여권 모드 == off일때 로직
+                if g_PassportMode == FALSE && g_NowAccepting == TRUE {
+                    ; // 친구 수 99명인지 체크
+                    xy := MatchObject(ObjectLibrary.FriendList99)
+                    if xy {
+                        g_CurrentLogic := "2-00"
+                        SendUiMsg("[페이즈 전환] 친구 수 99명 도달. " . Round(_deletingTermConfig / 60000) . "분 후 친구 삭제 시작.")
+                        globalRetryCount := 0
+                        Sleep(_deletingTermConfig)
+                        continue
+                    }
+                    xy := MatchObject(ObjectLibrary.FriendRequestListCardAcceptButton)
+                    if xy {
+                        delayLong()
+                        Click(xy)
+                        delayLong()
+                        globalRetryCount := 0
+                        failCount := 0
+                        xy := MatchObject(ObjectLibrary.userDetailRequestNotFound)
+                        if xy {
+                            SendUiMsg("[오류] '신청은 발견되지 않았습니다'")
+                            ClickObject(ObjectLibrary.DialogConfirmButton)
+                            delayShort()
+                            continue
+                        }
+                        SendUiMsg("✅ 승인 처리 완료")
+                        continue
+                    }
+                    else {
+                        failCount := failCount + 1
+                        delayShort()
+                    }
+                }
+                ; // 여권 모드 == on일 때 로직
+                if g_PassportMode == TRUE && g_NowAccepting == TRUE {
+                    xy := MatchObject(ObjectLibrary.FriendRequestListCard)
                     if xy {
                         delayLong()
                         Click(xy)
@@ -845,7 +899,7 @@ Main() {
                 }
 
                 ; // 신청 목록 없을 경우
-                xy := MatchObject2(ObjectLibrary.FriendRequestListEmpty)
+                xy := MatchObject(ObjectLibrary.FriendRequestListEmpty)
                 if xy {
                     SendUiMsg("[안내] 잔여 신청 목록이 없습니다. 10초 후 새로고침.")
                     failCount := 0
@@ -865,7 +919,7 @@ Main() {
                     continue
                 }
                 ; // 유저가 신청 취소한 경우
-                xy := MatchObject2(ObjectLibrary.UserDetailRequestFriend)
+                xy := MatchObject(ObjectLibrary.UserDetailRequestFriend)
                 if xy {
                     SendUiMsg("[예외] 유저의 신청 취소")
                     ClickCloseModalButton()
@@ -873,7 +927,7 @@ Main() {
                     continue
                 }
                 ; // 마이 베스트 설정 1 (엠블럼 O)
-                xy := MatchObject2(ObjectLibrary.UserDetailMybestButton1)
+                xy := MatchObject(ObjectLibrary.UserDetailMybestButton1)
                 if xy {
                     Click(xy)
                     delayShort()
@@ -884,7 +938,7 @@ Main() {
                     continue
                 }
                 ; // 마이 베스트 설정 2 (엠블럼 X)
-                xy := MatchObject2(ObjectLibrary.UserDetailMybestButton2)
+                xy := MatchObject(ObjectLibrary.UserDetailMybestButton2)
                 if xy {
                     Click(xy)
                     delayShort()
@@ -895,7 +949,7 @@ Main() {
                     continue
                 }
                 ; // 마이 베스트 미설정 1 (엠블럼 O)
-                xy := MatchObject2(ObjectLibrary.UserDetailEmpty1)
+                xy := MatchObject(ObjectLibrary.UserDetailEmpty1)
                 if xy {
                     SendUiMsg("[예외] 마이 베스트 미설정")
                     SendUiMsg("❌ 입국 거절")
@@ -903,7 +957,7 @@ Main() {
                     continue
                 }
                 ; // 마이 베스트 미설정 2 (엠블럼 X)
-                xy := MatchObject2(ObjectLibrary.UserDetailEmpty2)
+                xy := MatchObject(ObjectLibrary.UserDetailEmpty2)
                 if xy {
                     SendUiMsg("[예외] 마이 베스트 미설정")
                     SendUiMsg("❌ 입국 거절")
@@ -929,7 +983,7 @@ Main() {
                     continue
                 }
                 ; // 여권 체크
-                xy := MatchObject2(ObjectLibrary.PassportPikachu)
+                xy := MatchObject(ObjectLibrary.PassportPikachu)
                 if xy {
                     _thisUserPass := TRUE
                     _thisUserFulfilled := FALSE
@@ -958,7 +1012,7 @@ Main() {
                     continue
                 }
                 ; // 승인 버튼 클릭
-                xy := MatchObject2(ObjectLibrary.UserDetailAccept)
+                xy := MatchObject(ObjectLibrary.UserDetailAccept)
                 if xy {
                     Click(xy)
                     delayShort()
@@ -968,7 +1022,7 @@ Main() {
                     continue
                 }
                 ; // 정상 진행하지 못했을 때 이 아래 진행
-                xy := MatchObject2(ObjectLibrary.userDetailRequestNotFound)
+                xy := MatchObject(ObjectLibrary.userDetailRequestNotFound)
                 if xy {
                     SendUiMsg("[오류] '신청은 발견되지 않았습니다'")
                     ClickObject(ObjectLibrary.DialogConfirmButton)
@@ -1009,7 +1063,7 @@ Main() {
                     continue
                 }
                 ; // 거절 버튼 클릭
-                xy := MatchObject2(ObjectLibrary.UserDetailDecline)
+                xy := MatchObject(ObjectLibrary.UserDetailDecline)
                 if xy {
                     Click(xy)
                     TryLogicTransition('1-07')
@@ -1038,11 +1092,10 @@ Main() {
                 ;; 삭제 로직 시작
             case '2-00':
                 ;; 환경값 재설정
-                _delayConfig := g_UserIni.Delay
-                _instanceNameConfig := g_UserIni.InstanceName
-                _acceptingTermConfig := g_UserIni.AcceptingTerm * 60000
-                _deletingTermConfig := g_UserIni.BufferTerm * 60000
+                UpdateConfig()
                 failCount := 0
+                global g_RemoveFriendPosition := 1
+                global g_ClosedUserExists := FALSE
 
                 SendUiMsg("🗑️ 친구 삭제 시작")
                 g_CaseDescription := '친구 삭제를 위해 메뉴 초기화'
@@ -1068,35 +1121,56 @@ Main() {
                     InitLocation('FriendList')
                 }
 
+                ; // 기본 로직
+                if g_RemoveFriendPosition == 1 || g_RemoveFriendPosition == 2 {
+                    xy := MatchObject(g_RemoveFriendPosition == 1 ? ObjectLibrary.FriendListCard1 : ObjectLibrary.FriendListCard2
+                    )
+                    if xy {
+                        delayLong()
+                        Click(xy)
+                        delayLong()
+                        r := TryLogicTransition('2-02')
+                        if r {
+                            globalRetryCount := 0
+                            continue
+                        }
+                        else {
+                            failCount := failCount + 1
+                            continue
+                        }
+                    }
+                    else {
+                    }
+                }
+                ; // 친구 모두 삭제했는지 체크
                 ; // 친구 수==0 일때
-                xy := MatchObject2(ObjectLibrary.friendListEmpty)
+                xy := MatchObject(ObjectLibrary.FriendListEmpty)
                 if xy {
                     SendUiMsg("[안내] 친구를 모두 삭제했습니다.")
                     SendUiMsg("[페이즈 전환] 수락을 재개합니다.")
                     PhaseToggler()
                     globalRetryCount := 0
+                    g_ClosedUserExists := FALSE
+                    g_RemoveFriendPosition := 1
                     g_CurrentLogic := "1-00"
                     continue
                 }
-                ; // 기본 로직
-                xy := MatchObject2(ObjectLibrary.FriendListCard)
-                if not xy {
-                    failCount := failCount + 1
-                    continue
-                }
-                if xy {
-                    delayLong()
-                    Click(xy)
-                    delayShort()
-                }
-                r := TryLogicTransition('2-02')
-                if r {
-                    globalRetryCount := 0
-                    continue
-                }
                 else {
-                    failCount := failCount + 1
+                    if g_ClosedUserExists {
+                        xy := MatchObject(ObjectLibrary.FriendList1)
+                        if xy {
+                            SendUiMsg("[안내] 💀 탈퇴한 1명의 유저를 제외한 모든 친구를 삭제했습니다.")
+                            SendUiMsg("[페이즈 전환] 수락을 재개합니다.")
+                            PhaseToggler()
+                            globalRetryCount := 0
+                            g_ClosedUserExists := FALSE
+                            g_RemoveFriendPosition := 1
+                            g_CurrentLogic := "1-00"
+                            continue
+                        }
+                    }
                 }
+                failCount := failCount + 1
             case '2-02':
                 g_CaseDescription := "친구 삭제 진행"
                 LogicStartLog()
@@ -1105,9 +1179,9 @@ Main() {
                 ;// 가장 먼저 failCount 체크
                 if (failCount >= 5) {
                     SendUiMsg("[오류] 친구 삭제 호출 실패. 화면을 초기화 합니다.")
-                    g_CurrentLogic := "D01"
                     failCount := 0
                     InitLocation('FriendList')
+                    TryLogicTransition("2-01")
                 }
                 ClickObject(ObjectLibrary.userDetailFriendNow)
                 r := TryLogicTransition('2-03')
@@ -1115,9 +1189,18 @@ Main() {
                     continue
                 }
                 else {
-                    failCount := failCount + 1
+                    ; // 탈퇴 계정인지 확인
+                    xy := MatchObject(ObjectLibrary.UserDetailClosed)
+                    if xy {
+                        handleClosedUser()
+                        ClickCloseModalButton()
+                        TryLogicTransition("2-01")
+                        continue
+                    }
                 }
-
+                failCount := failCount + 1
+                continue
+                
             case '2-03':
                 g_CaseDescription := "친구 삭제 진행"
                 LogicStartLog()
@@ -1125,15 +1208,15 @@ Main() {
                 ;// 가장 먼저 failCount 체크
                 if (failCount >= 5) {
                     SendUiMsg("[오류] 친구 삭제 호출 실패. 화면을 초기화 합니다.")
-                    g_CurrentLogic := "2-01"
                     failCount := 0
                     SendInput "{esc}"
                     InitLocation('FriendList')
+                    TryLogicTransition("2-01")
                 }
 
                 ClickObject(ObjectLibrary.removeFriendConfirm)
                 delayLong()
-                xy := MatchObject2(ObjectLibrary.UserDetailRequestFriend)
+                xy := MatchObject(ObjectLibrary.UserDetailRequestFriend)
                 if xy {
                     delayShort()
                     SendUiMsg("[친구 삭제 완료]")
@@ -1148,13 +1231,22 @@ Main() {
     }
 }
 
-; // Current 확인 로직 추가
-; // Current에 따라 초기 화면으로 돌아가는 로직 추가
-; // 이전 단계로 넘어가기 전에 현재 화면 체크 로직 필요 / 체크 완료 후 Current 변경 / 전체적으로 화면 변경 시점의 전환 로직 살펴보기
-; // control 클릭 함수 정리 필요 -->> tryClick
-; // 주요 버튼 클릭 함수화 ? 가능한지
-
 ;; 함수 정의
+handleClosedUser() {
+    global g_RemoveFriendPosition
+    global g_ClosedUserExists
+    global g_CurrentLogic
+
+    if g_RemoveFriendPosition == 1 {
+        g_RemoveFriendPosition := 2
+    }
+    else if g_RemoveFriendPosition == 2 {
+        g_RemoveFriendPosition := 1
+    }
+    g_ClosedUserExists := TRUE
+    SendUiMsg("[예외] 💀 탈퇴한 친구가 존재합니다.")
+}
+
 ; getScreenXbyWindowPercentage() 정의
 ; 1) nn%와 같은 상대값을 입력 받고
 ; 2) 타겟 윈도우의 창 크기를 기준으로 절대값으로 변환
@@ -1352,7 +1444,7 @@ PhaseToggler(elapsedTime := 0) {
 InitLocation(Destination := "RequestList") {
     r := 0
     while r < 10 {
-        xy := MatchObject2(ObjectLibrary.FriendsMenuButton)
+        xy := MatchObject(ObjectLibrary.FriendsMenuButton)
         if xy {
             ClickObject(ObjectLibrary.FriendsMenuButton)
             delayLoad()
@@ -1507,42 +1599,6 @@ UpdateUserIni(obj) {
 
 MatchObject(ObjectItem) {
     xy := []
-
-    x1 := Round(ObjectItem.rangeX1, 2)
-    y1 := Round(ObjectItem.rangeY1, 2)
-    x2 := Round(ObjectItem.rangeX2, 2)
-    y2 := Round(ObjectItem.rangeY2, 2)
-
-    wx1 := getWindowXbyDecimal(x1)
-    wy1 := getWindowYbyDecimal(y1)
-    wx2 := getWindowXbyDecimal(x2)
-    wy2 := getWindowYbyDecimal(y2)
-
-    ww := wx2 - wx1
-    wh := wy2 - wy1
-
-    capture := ImagePutBuffer({ window: targetWindow })
-    needle := ImagePutBuffer({ file: ObjectItem.matchImage[g_CurrentResolution] })
-    ; if (ObjectItem = ObjectLibrary.PassportPikachu or ObjectItem = ObjectLibrary.userDetailFriendNow) {
-    ; xy := capture.ImageSearch(needle, 5)
-
-    xy := capture.ImageSearch(needle) ; // 스크린 기준 좌표 반환
-
-    if xy {
-        SendDebugMsg("[MatchImage] 이미지 매치 성공 : " ObjectItem.name " / " xy[1] ", " xy[2])
-        xy[1] := xy[1] + getWindowXbyDecimal(ObjectItem.pointXOffsetFromMatch)
-        xy[2] := xy[2] + getWindowYbyDecimal(ObjectItem.pointYOffsetFromMatch)
-        SendDebugMsg("[MatchImage] 클릭 좌표 반환 : " ObjectItem.name " / " xy[1] ", " xy[2])
-        return xy ; // 스크린 기준 클릭 좌표 반환
-    }
-    else {
-        SendDebugMsg("[MatchImage] 이미지 매치 실패 : " ObjectItem.name)
-        return ""
-    }
-}
-
-MatchObject2(ObjectItem) {
-    xy := []
     wx := targetWindowX
     wy := targetWindowY
     ww := targetWindowWidth
@@ -1589,8 +1645,8 @@ TryLogicTransition(targetLogic) {
     i := TransitionLibrary[targetLogic]
     SendDebugMsg("[TryLogicTransition] 타겟 로직: " targetLogic)
     delayShort()
-    while r <= 5 {
-        xy := MatchObject2(i)
+    while r <= 10 {
+        xy := MatchObject(i)
         if xy {
             g_CurrentLogic := targetLogic
             failCount := 0
@@ -1615,6 +1671,6 @@ TransitionLibrary := Map(
     '1-06', ObjectLibrary.UserDetailDecline,
     '1-07', ObjectLibrary.UserDetailRequestFriend,
     '2-01', ObjectLibrary.FriendListActive,
-    '2-02', ObjectLibrary.userDetailFriendNow,
+    '2-02', ObjectLibrary.UserDetailFriendID,
     '2-03', ObjectLibrary.removeFriendConfirm
 )

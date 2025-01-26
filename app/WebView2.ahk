@@ -8,19 +8,6 @@
  * @see {@link https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/ API Reference}
  ***********************************************************************/
 
-dllPath := A_ScriptDir . "\app\WebView2Loader.dll"
-edgeRuntime := A_ScriptDir . "\app\msedge.dll"
-
-if !FileExist(dllPath) {
-    MsgBox "WebView2Loader.dll 파일이 존재하지 않습니다: " dllPath
-    ExitApp
-}
-
-; if !FileExist(edgeRuntime) {
-;     MsgBox "Fixed Version Runtime 디렉터리에 msedge.dll 파일이 없습니다: " edgeRuntime
-;     ExitApp
-; }
-
 if !DllCall('LoadLibrary', 'str', dllpath, 'ptr')
     throw OSError()
 
